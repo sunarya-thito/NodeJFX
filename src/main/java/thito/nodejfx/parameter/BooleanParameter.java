@@ -1,5 +1,6 @@
 package thito.nodejfx.parameter;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.SetChangeListener;
@@ -44,6 +45,11 @@ public class BooleanParameter extends NodeParameter implements UserInputParamete
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public BooleanProperty disableInputProperty() {
+        return input.disableProperty();
     }
 
     @Override

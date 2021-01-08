@@ -17,6 +17,7 @@ public class NodeCanvas extends Pane {
     private NodeLinkContainer linkContainer;
     private NodeContainer nodeContainer = new NodeContainer();
     private NodeGroupContainer groupContainer = new NodeGroupContainer();
+    private NodeGroupHighlightContainer groupHighlightContainer = new NodeGroupHighlightContainer();
     private ObservableList<Node> nodes = FXCollections.observableArrayList();
     private ObjectProperty<NodeLinkStyle> style = new SimpleObjectProperty<>(NodeLinkStyle.BEZIER_STYLE);
     private ObservableSet<NodeCanvasElement> selectedNodes = FXCollections.observableSet(ConcurrentHashMap.newKeySet());
@@ -31,12 +32,14 @@ public class NodeCanvas extends Pane {
                     group.initialize(this);
                     groupContainer.getChildren().add(group);
                     group.updateGroups();
+                    groupHighlightContainer.getChildren().add(group.getHighlight());
                 }
                 NodeContext.iterateLater(c.getRemoved(), group -> {
                     selectedNodes.remove(group);
                     group.destroy(this);
                     groupContainer.getChildren().remove(group);
                     group.getElements().clear();
+                    groupHighlightContainer.getChildren().remove(group.getHighlight());
                 });
             }
         });
@@ -56,7 +59,7 @@ public class NodeCanvas extends Pane {
                 });
             }
         });
-        getChildren().addAll(linkContainer, nodeContainer, groupContainer);
+        getChildren().addAll(groupHighlightContainer, linkContainer, nodeContainer, groupContainer);
         style.addListener((obs, oldValue, newValue) -> {
             for (NodeLink link : linkContainer.getLinks()) {
                 link.setStyle(newValue);
@@ -96,6 +99,10 @@ public class NodeCanvas extends Pane {
 
     public NodeContainer getNodeContainer() {
         return nodeContainer;
+    }
+
+    public NodeGroupHighlightContainer getGroupHighlightContainer() {
+        return groupHighlightContainer;
     }
 
     public ObservableList<NodeGroup> getGroups() {

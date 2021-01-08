@@ -34,12 +34,15 @@ public class NodeGroup extends Group implements NodeCanvasElement {
     private Pane borderPane;
     private Rectangle mask;
     private SimpleDoubleProperty topPos = new SimpleDoubleProperty(), rightPos = new SimpleDoubleProperty(), leftPos = new SimpleDoubleProperty(), bottomPos = new SimpleDoubleProperty();
+    private NodeGroupHighlight highlight;
 
     private BooleanProperty selected = new SimpleBooleanProperty();
 
     private ObservableList<NodeCanvasElement> nodes = FXCollections.observableArrayList();
 
     private ObservableSet<NodeGroup> groups = FXCollections.observableSet(ConcurrentHashMap.newKeySet());
+
+    private ObjectProperty<Color> groupColor = new SimpleObjectProperty<>(NodeContext.randomBrightColor(1));
 
     public boolean isOnBounds(NodeCanvasElement node) {
         return getExactBounds().contains(node.getExactBounds());
@@ -62,6 +65,24 @@ public class NodeGroup extends Group implements NodeCanvasElement {
     private ObjectProperty<Color> controllerColor = new SimpleObjectProperty<>(NodeContext.BACKGROUND_GROUP);
 
     private NodeContext.DragInfo dragInfo;
+
+    @Override
+    public ElementState getState() {
+        ElementState state = new ElementState();
+        state.setLayoutX(leftPos.get());
+        state.setLayoutY(topPos.get());
+        state.setWidth(rightPos.get() - state.getLayoutX());
+        state.setHeight(bottomPos.get() - state.getLayoutY());
+        return state;
+    }
+
+    @Override
+    public void loadState(ElementState state) {
+        leftPos.set(state.getLayoutX());
+        topPos.set(state.getLayoutY());
+        rightPos.set(state.getWidth() + state.getLayoutX());
+        bottomPos.set(state.getHeight() + state.getLayoutY());
+    }
 
     public NodeGroup() {
 
@@ -90,6 +111,8 @@ public class NodeGroup extends Group implements NodeCanvasElement {
                 bottomRight = new NodeGroupCorner(big, true, true),
                 bottomLeft = new NodeGroupCorner(big, true, true)
                 );
+
+        highlight = new NodeGroupHighlight(this);
 
         topPos.bindBidirectional(topRight.layoutYProperty());
         topPos.bindBidirectional(topLeft.layoutYProperty());
@@ -144,10 +167,12 @@ public class NodeGroup extends Group implements NodeCanvasElement {
 
         title.addEventFilter(MouseEvent.MOUSE_PRESSED, this::attemptPress);
         title.addEventHandler(MouseEvent.MOUSE_PRESSED, Event::consume);
+        highlight.addEventFilter(MouseEvent.MOUSE_PRESSED, this::attemptPress);
 
         selected.addListener((obs, old, val) -> {
             NodeCanvas canvas = getCanvas();
             if (val) {
+                highlight.toFront();
                 controllerColor.set(NodeContext.BACKGROUND_GROUP_SELECTED);
                 if (canvas != null) {
                     canvas.getSelectedNodes().add(this);
@@ -237,6 +262,10 @@ public class NodeGroup extends Group implements NodeCanvasElement {
         bottomPos.set(50);
     }
 
+    public NodeGroupHighlight getHighlight() {
+        return highlight;
+    }
+
     @Override
     public void delete() {
         if (canvas != null) {
@@ -258,6 +287,10 @@ public class NodeGroup extends Group implements NodeCanvasElement {
 
     public SimpleDoubleProperty getLeftPos() {
         return leftPos;
+    }
+
+    public ObjectProperty<Color> groupColorProperty() {
+        return groupColor;
     }
 
     @Override
@@ -359,6 +392,12 @@ public class NodeGroup extends Group implements NodeCanvasElement {
         this.canvas = null;
     }
 
+    private StringProperty groupName;
+
+    public StringProperty getGroupName() {
+        return groupName;
+    }
+
     public class NodeGroupCorner extends Pane {
 
         private NodeContext.DragInfo info;
@@ -401,6 +440,7 @@ public class NodeGroup extends Group implements NodeCanvasElement {
         private final Scene measuringScene = new Scene(new Group(measuringText));
 
         public NodeGroupTitle() {
+            groupName = textProperty();
             setPrefWidth(MAGIC_PADDING);
             setMinWidth(MAGIC_PADDING);
             setMaxWidth(USE_PREF_SIZE);

@@ -58,8 +58,8 @@ public class NodeViewportControl extends FlowPane {
         Button resetPanAndZoomButton = new Button("Reset");
         resetPanAndZoomButton.setOnMouseClicked(event -> {
             getViewport().setScale(100);
-            getViewport().getMoveTransform().setX(0);
-            getViewport().getMoveTransform().setY(0);
+            getViewport().getViewportContainer().setTranslateX(0);
+            getViewport().getViewportContainer().setTranslateY(0);
         });
         getChildren().add(resetPanAndZoomButton);
         ComboBox<ToolMode> tools = new ComboBox<>(FXCollections.observableArrayList(ToolMode.values()));

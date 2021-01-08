@@ -8,9 +8,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 
 public class NodeEditor extends AnchorPane {
-    public static void applyTheme(Parent node) {
-        node.getStylesheets().add(NodeEditor.class.getResource("modena_dark.css").toString());
-    }
     private NodeViewport viewport;
     private NodeViewportControl control;
     private NodeSelectionContainer selectionContainer;
@@ -21,8 +18,6 @@ public class NodeEditor extends AnchorPane {
 
         selectionContainer = new NodeSelectionContainer(viewport.getCanvas());
         selectionContainer.setManaged(false);
-
-        applyTheme(this);
 
         setTopAnchor(viewport, 0d);
         setBottomAnchor(viewport, 0d);

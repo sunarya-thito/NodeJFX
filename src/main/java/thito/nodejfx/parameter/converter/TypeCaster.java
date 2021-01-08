@@ -24,6 +24,20 @@ public interface TypeCaster<T> {
         }
     };
 
+    static <T> TypeCaster<T> checkedTypeCaster(Class<T> type) {
+        return new TypeCaster<T>() {
+            @Override
+            public T fromSafeObject(Object obj) {
+                return type.isInstance (obj) ? type.cast(obj) : null;
+            }
+
+            @Override
+            public Object toSafeObject(T obj) {
+                return obj;
+            }
+        };
+    }
+
     T fromSafeObject(Object obj);
     Object toSafeObject(T obj);
     static <T> void bindBidirectional(ObjectProperty<Object> object, Property<T> value, ObjectProperty<TypeCaster<T>> caster) {

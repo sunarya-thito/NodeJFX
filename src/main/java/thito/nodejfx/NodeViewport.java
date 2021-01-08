@@ -9,7 +9,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.transform.Scale;
-import javafx.scene.transform.Translate;
 
 public class NodeViewport extends Pane {
 
@@ -18,7 +17,7 @@ public class NodeViewport extends Pane {
     private NodeCanvas target;
     private Pane dummyNode;
 
-    private Translate moveTransform = new Translate();
+//    private Translate moveTransform = new Translate();
     private Scale scaleTransform = new Scale(1, 1);
 
     private Image gridImage;
@@ -97,13 +96,27 @@ public class NodeViewport extends Pane {
                 null, null)));
     }
 
+    public ViewportState getState() {
+        ViewportState state = new ViewportState();
+        state.setPanX(target.getTranslateX());
+        state.setPanY(target.getTranslateY());
+        state.setZoom(scaleValue.get());
+        return state;
+    }
+
+    public void loadState(ViewportState state) {
+        target.setTranslateX(state.getPanX());
+        target.setTranslateY(state.getPanY());
+        scaleValue.set(state.getZoom());
+    }
+
     public Scale getScaleTransform() {
         return scaleTransform;
     }
 
-    public Translate getMoveTransform() {
-        return moveTransform;
-    }
+//    public Translate getMoveTransform() {
+//        return moveTransform;
+//    }
 
     public int getScale() {
         return scaleValue.get();

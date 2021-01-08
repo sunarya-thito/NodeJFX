@@ -23,4 +23,6 @@ public interface NodeCanvasElement {
     Bounds getBoundsInParent();
     Bounds getExactBounds();
     NodeContext.DragInfo getDragInfo();
+    ElementState getState();
+    void loadState(ElementState state);
 }

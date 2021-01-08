@@ -162,6 +162,20 @@ public class Node extends VBox implements NodeCanvasElement {
     }
 
     @Override
+    public ElementState getState() {
+        ElementState state = new ElementState();
+        state.setLayoutX(getLayoutX());
+        state.setLayoutY(getLayoutY());
+        return state;
+    }
+
+    @Override
+    public void loadState(ElementState state) {
+        setLayoutX(state.getLayoutX());
+        setLayoutY(state.getLayoutY());
+    }
+
+    @Override
     public javafx.scene.Node getComponent() {
         return this;
     }

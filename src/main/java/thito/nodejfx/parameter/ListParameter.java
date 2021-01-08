@@ -1,45 +1,47 @@
 package thito.nodejfx.parameter;
 
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.util.StringConverter;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
 import thito.nodejfx.parameter.type.JavaParameterType;
 
-public class CharacterParameter extends NodeParameter implements UserInputParameter<Character> {
-    private Label fieldText;
-    private TextField input;
-    private BorderPane box = new BorderPane();
+import java.util.Collection;
+
+public class ListParameter<T> extends NodeParameter implements UserInputParameter<T> {
     private ObjectProperty<Object> value = new SimpleObjectProperty<>();
-    private ObjectProperty<TypeCaster<Character>> typeCaster = new SimpleObjectProperty<>(TypeCaster.CHARACTER_TYPE_CASTER);
-    public CharacterParameter(String fieldName) {
+    private ObjectProperty<TypeCaster<T>> typeCaster = new SimpleObjectProperty<>();
+
+    private Label fieldText;
+    private ComboBox<T> input;
+    private BorderPane box = new BorderPane();
+    public ListParameter(String fieldName, Class<T> type, Collection<T> collection, StringConverter<T> converter) {
         fieldText = new Label(fieldName);
-        input = new TextField();
-        getContainer().getChildren().add(box);
+        typeCaster.set(TypeCaster.checkedTypeCaster(type));
+        ObservableList<T> values = FXCollections.observableArrayList(collection);
+        values.add(0, null);
+        input = new ComboBox<>(values);
+        input.setEditable(true);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
         BorderPane.setAlignment(fieldText, Pos.CENTER);
         BorderPane.setAlignment(input, Pos.CENTER_LEFT);
         box.setLeft(fieldText);
         box.setRight(input);
-        getInputType().set(JavaParameterType.getCastableType(Character.class));
-        getOutputType().set(JavaParameterType.getCastableType(Character.class));
-        input.textProperty().bindBidirectional(value, new StringConverter<Object>() {
-            @Override
-            public String toString(Object object) {
-                return TypeCaster.toString(typeCaster.get().fromSafeObject(object));
-            }
-
-            @Override
-            public Object fromString(String string) {
-                return typeCaster.get().fromSafeObject(string);
-            }
-        });
+        input.setConverter(converter);
+        getContainer().getChildren().add(box);
+        getInputType().set(JavaParameterType.getType(type));
+        getOutputType().set(JavaParameterType.getType(type));
+        TypeCaster.bindBidirectional(value, input.valueProperty(), typeCaster);
         getUnmodifiableInputLinks().addListener((SetChangeListener<NodeParameter>) change -> {
             if (change.wasRemoved()) {
                 valueProperty().unbind();
@@ -62,20 +64,12 @@ public class CharacterParameter extends NodeParameter implements UserInputParame
     }
 
     @Override
-    public ObjectProperty<TypeCaster<Character>> typeCaster() {
-        return typeCaster;
-    }
-
-    @Override
     public ObjectProperty<Object> valueProperty() {
         return value;
     }
 
-    public Label getFieldText() {
-        return fieldText;
-    }
-
-    public TextField getInput() {
-        return input;
+    @Override
+    public ObjectProperty<TypeCaster<T>> typeCaster() {
+        return typeCaster;
     }
 }

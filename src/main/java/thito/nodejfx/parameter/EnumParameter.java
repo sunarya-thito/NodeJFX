@@ -1,5 +1,6 @@
 package thito.nodejfx.parameter;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -66,6 +67,11 @@ public class EnumParameter<T extends Enum<T>> extends NodeParameter implements U
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public BooleanProperty disableInputProperty() {
+        return input.disableProperty();
     }
 
     @Override

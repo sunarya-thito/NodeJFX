@@ -198,5 +198,15 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
         public NodeContext.DragInfo getDragInfo() {
             return null;
         }
+
+        @Override
+        public ElementState getState() {
+            return null;
+        }
+
+        @Override
+        public void loadState(ElementState state) {
+
+        }
     }
 }
