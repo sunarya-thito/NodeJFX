@@ -1,34 +1,86 @@
 package thito.nodejfx;
 
+import javafx.beans.InvalidationListener;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.css.*;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.transform.Scale;
 
 public class NodeViewport extends Pane {
+
+    private static final CssMetaData<NodeViewport, Color> baseColorCss = new CssMetaData<NodeViewport, Color>("-fx-base-color", StyleConverter.getColorConverter()) {
+        @Override
+        public boolean isSettable(NodeViewport styleable) {
+            return !styleable.baseColor.isBound();
+        }
+
+        @Override
+        public StyleableProperty<Color> getStyleableProperty(NodeViewport styleable) {
+            return styleable.baseColor;
+        }
+    };
+
+    private static final CssMetaData<NodeViewport, Color> microLineColorCss = new CssMetaData<NodeViewport, Color>("-fx-micro-line-color", StyleConverter.getColorConverter()) {
+        @Override
+        public boolean isSettable(NodeViewport styleable) {
+            return !styleable.microLineColor.isBound();
+        }
+
+        @Override
+        public StyleableProperty<Color> getStyleableProperty(NodeViewport styleable) {
+            return styleable.microLineColor;
+        }
+    };
+
+    private static final CssMetaData<NodeViewport, Color> macroLineColorCss = new CssMetaData<NodeViewport, Color>("-fx-macro-line-color", StyleConverter.getColorConverter()) {
+        @Override
+        public boolean isSettable(NodeViewport styleable) {
+            return !styleable.macroLineColor.isBound();
+        }
+
+        @Override
+        public StyleableProperty<Color> getStyleableProperty(NodeViewport styleable) {
+            return styleable.macroLineColor;
+        }
+    };
 
     static final int gridSize = 100;
     private IntegerProperty scaleValue = new SimpleIntegerProperty(100);
     private NodeCanvas target;
     private Pane dummyNode;
 
-//    private Translate moveTransform = new Translate();
     private Scale scaleTransform = new Scale(1, 1);
 
-    private Image gridImage;
+    private ObjectProperty<Image> gridImage = new SimpleObjectProperty<>();
 
     private double dragOffsetX, dragOffsetY;
+
+    private StyleableObjectProperty<Color> baseColor = new SimpleStyleableObjectProperty<>(baseColorCss, Color.rgb(35, 35, 35));
+    private StyleableObjectProperty<Color> microLineColor = new SimpleStyleableObjectProperty<>(microLineColorCss, Color.rgb(45, 45, 45));
+    private StyleableObjectProperty<Color> macroLineColor = new SimpleStyleableObjectProperty<>(macroLineColorCss, Color.rgb(25, 25, 25));
+
 
     public NodeViewport() {
         this.target = newCanvas();
         this.dummyNode = new Pane(target);
 
-        gridImage = SwingFXUtils.toFXImage(NodeContext.generateGrid(gridSize, gridSize), null);
+        InvalidationListener updateGrid = obs -> {
+            gridImage.set(SwingFXUtils.toFXImage(NodeContext.generateGrid(baseColor.get(), microLineColor.get(), macroLineColor.get(), gridSize, gridSize), null));
+        };
+        baseColor.addListener(updateGrid);
+        macroLineColor.addListener(updateGrid);
+        microLineColor.addListener(updateGrid);
 
         dummyNode.layoutXProperty().bind(widthProperty().divide(2d));
         dummyNode.layoutYProperty().bind(heightProperty().divide(2d));
@@ -42,6 +94,7 @@ public class NodeViewport extends Pane {
 
         dummyNode.translateXProperty().addListener(x -> updateBackground());
         dummyNode.translateYProperty().addListener(x -> updateBackground());
+        gridImage.addListener(x -> updateBackground());
 
         scaleTransform.pivotXProperty().bind(dummyNode.widthProperty().divide(2d));
         scaleTransform.pivotYProperty().bind(dummyNode.heightProperty().divide(2d));
@@ -92,7 +145,7 @@ public class NodeViewport extends Pane {
 
     void updateBackground() {
         backgroundProperty().set(new Background(new BackgroundFill(
-                new ImagePattern(gridImage, dummyNode.getTranslateX(), dummyNode.getTranslateY(), gridSize, gridSize, false),
+                new ImagePattern(gridImage.get(), dummyNode.getTranslateX(), dummyNode.getTranslateY(), gridSize, gridSize, false),
                 null, null)));
     }
 

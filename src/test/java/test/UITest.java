@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 public class UITest extends Application {
@@ -91,12 +90,12 @@ public class UITest extends Application {
 
     static int total = 0;
     public static void main(String[] args) {
-//        UITest.launch(UITest.class, args);
-        List<DS> x = new ArrayList<>();
-        for (int i = 0; i < 5; i++) x.add(new DS());
-        for (String all : collectAll(x, c -> c.allString)) {
-            System.out.println(all);
-        }
+        UITest.launch(UITest.class, args);
+//        List<DS> x = new ArrayList<>();
+//        for (int i = 0; i < 5; i++) x.add(new DS());
+//        for (String all : collectAll(x, c -> c.allString)) {
+//            System.out.println(all);
+//        }
     }
 
     public static class DS {

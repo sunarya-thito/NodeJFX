@@ -7,22 +7,13 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
-import javafx.scene.Parent;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Translate;
-import javafx.util.Callback;
-import jfxtras.styles.jmetro.JMetro;
-import jfxtras.styles.jmetro.Style;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -32,9 +23,6 @@ import java.util.function.Consumer;
 
 public interface NodeContext {
     Color
-    BACKGROUND_CANVAS = Color.rgb(35, 35, 35),
-    BACKGROUND_CANVAS_GRID = Color.rgb(45, 45, 45),
-    BACKGROUND_CANVAS_GRID_MACRO = Color.rgb(25, 25, 25),
     BACKGROUND_NODE = Color.rgb(50, 50, 50, 0.5f),
     BACKGROUND_NODE_SELECTED = Color.rgb(50, 50, 50, 0.7f),
     BACKGROUND_LINKER = Color.rgb(128, 128, 128),
@@ -43,7 +31,6 @@ public interface NodeContext {
     BACKGROUND_GROUP_BORDER = Color.rgb(150, 150, 150),
     BACKGROUND_GROUP_SELECTED = Color.WHITE,
     BACKGROUND_GROUP_HOVER = Color.LIGHTBLUE,
-//    SHADOW_GROUP_SELECTED = Color.rgb(200, 200, 200),
     SHADOW_NODE = Color.rgb(25, 25, 25),
     SHADOW_CONTROL = Color.rgb(10, 10, 10),
     BACKGROUND_SEPARATOR = Color.rgb(150, 150, 150, 0.5f);
@@ -174,11 +161,11 @@ public interface NodeContext {
         return new java.awt.Color((int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
     }
 
-    static BufferedImage generateGrid(int width, int height) {
+    static BufferedImage generateGrid(Color base, Color microLine, Color macroLine, int width, int height) {
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        java.awt.Color back = toAWTColor(BACKGROUND_CANVAS);
-        java.awt.Color grid = toAWTColor(BACKGROUND_CANVAS_GRID);
-        java.awt.Color gridMacro = toAWTColor(BACKGROUND_CANVAS_GRID_MACRO);
+        java.awt.Color back = toAWTColor(base);
+        java.awt.Color grid = toAWTColor(microLine);
+        java.awt.Color gridMacro = toAWTColor(macroLine);
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 if (x <= 1 || y <= 1) {
