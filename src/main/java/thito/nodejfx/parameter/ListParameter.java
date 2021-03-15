@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.*;
 import javafx.util.StringConverter;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
@@ -27,11 +28,12 @@ public class ListParameter<T> extends NodeParameter implements UserInputParamete
     private BorderPane box = new BorderPane();
     public ListParameter(String fieldName, Class<T> type, Collection<T> collection, StringConverter<T> converter) {
         fieldText = new Label(fieldName);
+        fieldText.setTextFill(Color.WHITE);
         typeCaster.set(TypeCaster.checkedTypeCaster(type));
         ObservableList<T> values = FXCollections.observableArrayList(collection);
         values.add(0, null);
         input = new ComboBox<>(values);
-        input.setEditable(true);
+        input.setEditable(false);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
         BorderPane.setAlignment(fieldText, Pos.CENTER);
         BorderPane.setAlignment(input, Pos.CENTER_LEFT);
@@ -56,6 +58,11 @@ public class ListParameter<T> extends NodeParameter implements UserInputParamete
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Label getLabel() {
+        return fieldText;
     }
 
     @Override

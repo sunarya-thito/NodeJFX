@@ -31,20 +31,34 @@ public class NodeDragContext {
                 } else {
                     canvas.connect(linking.getParameter(), param);
                 }
+            } else {
+                if (!move) {
+                    if (linking.isInput()) {
+                        container.getCanvas().fireEvent(new NodeLinkEvent(NodeLinkEvent.NODE_LINK_CANCEL_EVENT, linking, null, null, linking.getParameter()));
+                    } else {
+                        container.getCanvas().fireEvent(new NodeLinkEvent(NodeLinkEvent.NODE_LINK_CANCEL_EVENT ,linking, null, linking.getParameter(), null));
+                    }
+                }
             }
-            container.removeLink(linking);
+            if (!linking.isHold()) {
+                container.removeLink(linking);
+            }
         }
         nodeLinking.clear();
     }
+
+    private boolean move;
 
     public void startReallocating(NodeDragListener dragging, double x, double y) {
         NodeParameter parameter = dragging.getParameter();
         NodeCanvas canvas = getContainer().getCanvas();
         List<NodeParameter> linked;
+        move = false;
         if (dragging.isInput()) {
             linked = new ArrayList<>(parameter.inputLinks());
             for (NodeParameter opposite : linked) {
                 if (startDragging(opposite.getOutputDrag(), x, y)) {
+                    move = true;
                     canvas.disconnect(opposite, parameter);
                 }
             }
@@ -52,6 +66,7 @@ public class NodeDragContext {
             linked = new ArrayList<>(parameter.outputLinks());
             for (NodeParameter opposite : linked) {
                 if (startDragging(opposite.getInputDrag(), x, y)) {
+                    move = true;
                     canvas.disconnect(parameter, opposite);
                 }
             }
@@ -60,10 +75,11 @@ public class NodeDragContext {
 
     public boolean startDragging(NodeDragListener dragging, double x, double y) {
         NodeLinkEvent event;
+        move = false;
         if (dragging.isInput()) {
-            event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKING_EVENT, dragging.getParameter(), null);
+            event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKING_EVENT, null, null, dragging.getParameter(), null);
         } else {
-            event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKING_EVENT, null, dragging.getParameter());
+            event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKING_EVENT, null, null, null, dragging.getParameter());
         }
         dragging.getParameter().fireEvent(event);
         if (event.isConsumed()) return false;

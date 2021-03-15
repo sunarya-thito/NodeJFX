@@ -1,10 +1,14 @@
 package thito.nodejfx.parameter.converter;
 
 public class NumberTypeCaster implements TypeCaster<Number> {
+
     @Override
     public Number fromSafeObject(Object obj) {
         if (obj instanceof Number) {
             return (Number) obj;
+        }
+        if (obj instanceof Character) {
+            return (int) ((Character) obj).charValue();
         }
         if (obj instanceof String) {
             String string = (String) obj;
@@ -20,6 +24,12 @@ public class NumberTypeCaster implements TypeCaster<Number> {
                 }
             } catch (Throwable t) {
             }
+        }
+        if (obj instanceof Boolean) {
+            return (Boolean) obj ? 1 : 0;
+        }
+        if (obj instanceof Enum) {
+            return ((Enum<?>) obj).ordinal();
         }
         return 0;
     }

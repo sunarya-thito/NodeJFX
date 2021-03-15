@@ -1,21 +1,14 @@
 package thito.nodejfx;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.*;
+import javafx.beans.property.*;
 import javafx.css.*;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
-import javafx.scene.transform.Scale;
+import javafx.embed.swing.*;
+import javafx.scene.image.*;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.*;
+import javafx.scene.transform.*;
 
 public class NodeViewport extends Pane {
 
@@ -78,6 +71,7 @@ public class NodeViewport extends Pane {
         InvalidationListener updateGrid = obs -> {
             gridImage.set(SwingFXUtils.toFXImage(NodeContext.generateGrid(baseColor.get(), microLineColor.get(), macroLineColor.get(), gridSize, gridSize), null));
         };
+        updateGrid.invalidated(null);
         baseColor.addListener(updateGrid);
         macroLineColor.addListener(updateGrid);
         microLineColor.addListener(updateGrid);
@@ -96,22 +90,15 @@ public class NodeViewport extends Pane {
         dummyNode.translateYProperty().addListener(x -> updateBackground());
         gridImage.addListener(x -> updateBackground());
 
+        scaleTransform.xProperty().bind(scaleProperty().divide(100d));
+        scaleTransform.yProperty().bind(scaleProperty().divide(100d));
         scaleTransform.pivotXProperty().bind(dummyNode.widthProperty().divide(2d));
         scaleTransform.pivotYProperty().bind(dummyNode.heightProperty().divide(2d));
 
         setOnScroll(event -> {
-            int oldScale = getScale();
-            setScale((int) (getScale() + (event.getTextDeltaY() < 0 ? -Math.sqrt(-event.getTextDeltaY() / 5 * getScale()) : Math.sqrt(event.getTextDeltaY() / 5 * getScale()))));
-            int newScale = getScale();
-            if (oldScale == newScale) return;
-            double x = event.getX();
-            double y = event.getY();
-            double centerX = getWidth() / 2; // this has to be divided by 4
-            double centerY = getHeight() / 2; // since the scale pivot is at the center of the dummyNode
-            double diffX = x - centerX;
-            double diffY = y - centerY;
-            target.setTranslateX(target.getTranslateX() - diffX * (event.getTextDeltaY() / 50));
-            target.setTranslateY(target.getTranslateY() - diffY * (event.getTextDeltaY() / 50));
+            if (focusedProperty().get()) {
+                setScale((int) (getScale() + (event.getTextDeltaY() < 0 ? -Math.sqrt(-event.getTextDeltaY() / 5 * getScale()) : Math.sqrt(event.getTextDeltaY() / 5 * getScale()))));
+            }
         });
 
         addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
@@ -124,8 +111,8 @@ public class NodeViewport extends Pane {
 
         addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
             if (event.getButton() == MouseButton.MIDDLE) {
-                dummyNode.setTranslateX(clamp(-500, dummyNode.getTranslateX() + event.getX() - dragOffsetX, 500));
-                dummyNode.setTranslateY(clamp(-500, dummyNode.getTranslateY() + event.getY() - dragOffsetY, 500));
+                dummyNode.setTranslateX(clamp(-5000, dummyNode.getTranslateX() + event.getX() - dragOffsetX, 5000));
+                dummyNode.setTranslateY(clamp(-5000, dummyNode.getTranslateY() + event.getY() - dragOffsetY, 5000));
                 dragOffsetX = event.getX();
                 dragOffsetY = event.getY();
                 event.consume();
@@ -133,6 +120,14 @@ public class NodeViewport extends Pane {
         });
 
         updateBackground();
+    }
+
+    public DoubleProperty paneX() {
+        return dummyNode.translateXProperty();
+    }
+
+    public DoubleProperty paneY() {
+        return dummyNode.translateYProperty();
     }
 
     static double clamp(double min, double value, double max) {

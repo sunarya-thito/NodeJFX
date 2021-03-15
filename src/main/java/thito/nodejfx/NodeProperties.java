@@ -28,7 +28,7 @@ public class NodeProperties {
     public IntegerProperty
     MICRO_PAN = new SimpleIntegerProperty(10),
     MACRO_PAN = new SimpleIntegerProperty(50),
-    MICRO_ZOOM = new SimpleIntegerProperty(3),
+    MICRO_ZOOM = new SimpleIntegerProperty(2),
     MACRO_ZOOM = new SimpleIntegerProperty(10);
     static SimpleObjectProperty<KeyCombination> keys(String name) {
 //        System.out.println(new KeyCodeCombination(KeyCode.E, KeyCombination.ModifierValue.DOWN, KeyCombination.ModifierValue.UP, KeyCombination.ModifierValue.ANY, KeyCombination.ModifierValue.DOWN, KeyCombination.ModifierValue.UP).getName());

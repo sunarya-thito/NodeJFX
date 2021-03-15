@@ -1,18 +1,16 @@
 package thito.nodejfx;
 
-import javafx.scene.Parent;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
+import javafx.geometry.*;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
+
+import java.util.*;
 
 public class NodeEditor extends AnchorPane {
     private NodeViewport viewport;
     private NodeViewportControl control;
     private NodeSelectionContainer selectionContainer;
     private NodeProperties properties = new NodeProperties();
-    private NodeMenu menu;
     public NodeEditor() {
         viewport = newViewport();
 
@@ -36,9 +34,7 @@ public class NodeEditor extends AnchorPane {
         setBottomAnchor(control, 20d);
         setLeftAnchor(control, 20d);
 
-        getChildren().addAll(viewport, selectionContainer, control);
-
-        menu = new NodeMenu(getViewport());
+        getChildren().addAll(viewport, selectionContainer); // was adding control, but nvm
 
         addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
             if (event.isPrimaryButtonDown()) {
@@ -84,7 +80,7 @@ public class NodeEditor extends AnchorPane {
         addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             Pane dummyNode = getViewport().getViewportContainer();
             if (properties.HOTKEY_DELETE.get().match(event)) {
-                menu.deleteSelected();
+                deleteSelected();
                 event.consume();
             } else if (properties.HOTKEY_PAN_MICRO_UP.get().match(event)) {
                 dummyNode.setTranslateY(dummyNode.getTranslateY() - properties.MICRO_PAN.get());
@@ -130,8 +126,14 @@ public class NodeEditor extends AnchorPane {
         });
     }
 
-    public NodeMenu getMenu() {
-        return menu;
+    public Point2D getLocationAt(double x, double y) {
+        return getCanvas().getNodeContainer().parentToLocal(getCanvas().parentToLocal(getViewport().parentToLocal(x, y)));
+    }
+
+    public void deleteSelected() {
+        for (NodeCanvasElement element : new ArrayList<>(getViewport().getCanvas().getSelectedNodes())) {
+            element.delete();
+        }
     }
 
     public NodeProperties getNodeProperties() {

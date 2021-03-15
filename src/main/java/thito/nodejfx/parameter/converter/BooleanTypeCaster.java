@@ -9,6 +9,9 @@ public class BooleanTypeCaster implements TypeCaster<Boolean> {
         if (obj instanceof String) {
             return Boolean.parseBoolean((String) obj);
         }
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue() == 1;
+        }
         return false;
     }
 

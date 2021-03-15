@@ -54,10 +54,10 @@ public class NodeSelectionContainer extends Pane {
         double width = x2 - x;
         double height = y2 - y;
         if (grouping != null) {
-            Point2D point = canvas.sceneToLocal(x, y);
-            Point2D point2 = canvas.sceneToLocal(x2, y2);
-//            Point2D point = canvas.getParent().parentToLocal(canvas.parentToLocal(x, y));
-//            Point2D point2 = canvas.getParent().parentToLocal(canvas.parentToLocal(x2, y2));
+//            Point2D point = canvas.sceneToLocal(x, y);
+//            Point2D point2 = canvas.sceneToLocal(x2, y2);
+            Point2D point = canvas.getParent().parentToLocal(canvas.parentToLocal(x, y));
+            Point2D point2 = canvas.getParent().parentToLocal(canvas.parentToLocal(x2, y2));
             x = point.getX();
             y = point.getY();
             x2 = point2.getX();

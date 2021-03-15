@@ -141,7 +141,7 @@ public class UITest extends Application {
         node.getParameters().addAll(
                 new LabelParameter("Test"),
                 new StringParameter("String"),
-                new NumberParameter("Number"),
+                new NumberParameter("Number", Double.class),
                 new EnumParameter<>("Enum", Test.class),
                 new BooleanParameter("Boolean"),
                 new CharacterParameter("Character")

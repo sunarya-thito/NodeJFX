@@ -6,6 +6,7 @@ import javafx.geometry.Point2D;
 public class NodeDragListener {
     private NodeParameter parameter;
     private boolean input;
+    private boolean move;
     public NodeDragListener(NodeParameter parameter, boolean input, javafx.scene.Node node) {
         this.parameter = parameter;
         this.input = input;

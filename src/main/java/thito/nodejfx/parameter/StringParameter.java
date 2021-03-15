@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.*;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
 import thito.nodejfx.parameter.type.JavaParameterType;
@@ -22,6 +23,7 @@ public class StringParameter extends NodeParameter implements UserInputParameter
 
     public StringParameter(String fieldName) {
         fieldText = new Label(fieldName);
+        fieldText.setTextFill(Color.WHITE);
         input = new TextField();
         getContainer().getChildren().add(box);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
@@ -29,8 +31,8 @@ public class StringParameter extends NodeParameter implements UserInputParameter
         BorderPane.setAlignment(input, Pos.CENTER_LEFT);
         box.setLeft(fieldText);
         box.setRight(input);
-        getInputType().set(JavaParameterType.getCastableType(String.class));
-        getOutputType().set(JavaParameterType.getCastableType(String.class));
+        getInputType().set(JavaParameterType.getType(String.class));
+        getOutputType().set(JavaParameterType.getType(String.class));
         TypeCaster.bindBidirectional(value, input.textProperty(), typeCaster);
         getUnmodifiableInputLinks().addListener((SetChangeListener<NodeParameter>) change -> {
             if (change.wasRemoved()) {
@@ -46,6 +48,11 @@ public class StringParameter extends NodeParameter implements UserInputParameter
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Label getLabel() {
+        return fieldText;
     }
 
     @Override

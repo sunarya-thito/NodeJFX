@@ -8,6 +8,7 @@ import javafx.scene.paint.Paint;
 public class NodeLinking extends NodeLink implements InvalidationListener {
     private NodeParameter source;
     private boolean input;
+    private boolean hold;
     public NodeLinking(NodeLinkContainer container, NodeLinkStyle style, NodeParameter source, boolean input, double x, double y) {
         super(
                 container, style,
@@ -18,6 +19,18 @@ public class NodeLinking extends NodeLink implements InvalidationListener {
         this.input = input;
 
         setStyle(style);
+    }
+
+    public void remove() {
+        container.removeLink(this);
+    }
+
+    public boolean isHold() {
+        return hold;
+    }
+
+    public void setHold(boolean hold) {
+        this.hold = hold;
     }
 
     @Override

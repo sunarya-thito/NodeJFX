@@ -42,6 +42,7 @@ public interface TypeCaster<T> {
     Object toSafeObject(T obj);
     static <T> void bindBidirectional(ObjectProperty<Object> object, Property<T> value, ObjectProperty<TypeCaster<T>> caster) {
         AtomicBoolean changing = new AtomicBoolean();
+        object.set(caster.get().toSafeObject(value.getValue()));
         object.addListener((obs, old, val) -> {
             if (changing.get()) return;
             changing.set(true);

@@ -1,7 +1,7 @@
 package thito.nodejfx;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
+import javafx.animation.*;
+import javafx.beans.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
@@ -15,6 +15,7 @@ import javafx.scene.effect.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.*;
 import javafx.scene.shape.Shape;
+import javafx.util.*;
 
 public class NodeLinked extends NodeLink implements InvalidationListener {
     private NodeParameter source, target;
@@ -29,7 +30,6 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
         this.target = target;
         invalidated(null);
         linkingElement = new LinkingElement();
-
         setStyle(style);
     }
 

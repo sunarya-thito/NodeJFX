@@ -1,12 +1,11 @@
 package thito.nodejfx;
 
 import javafx.beans.Observable;
+import javafx.beans.binding.*;
 import javafx.beans.property.*;
 import javafx.collections.*;
 import javafx.event.Event;
-import javafx.geometry.BoundingBox;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
+import javafx.geometry.*;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.effect.ColorAdjust;
@@ -22,14 +21,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Node extends VBox implements NodeCanvasElement {
 
-    private NodeTitle title = new NodeTitle();
     private SimpleStringProperty titleText = new SimpleStringProperty();
+    private SimpleStringProperty subtitleText = new SimpleStringProperty();
+    private NodeTitle title = new NodeTitle();
     private SimpleObjectProperty<Color> color = new SimpleObjectProperty<>();
     private ObservableList<NodeParameter> values = FXCollections.observableArrayList();
     private ObservableSet<NodeGroup> groups = FXCollections.observableSet(ConcurrentHashMap.newKeySet());
     private SimpleBooleanProperty selected = new SimpleBooleanProperty();
     private NodeCanvas canvas;
     private NodeContext.DragInfo dragInfo;
+    private BooleanProperty reachable = new SimpleBooleanProperty();
+    private BooleanProperty highlight = new SimpleBooleanProperty();
 
     public Node() {
         setPickOnBounds(false);
@@ -60,9 +62,6 @@ public class Node extends VBox implements NodeCanvasElement {
             }
         });
 
-        titleText.addListener((obs, oldVal, newVal) -> {
-            title.setTitle(newVal);
-        });
         color.addListener((obs, oldVal, newVal) -> {
             title.setColor(newVal);
         });
@@ -148,7 +147,11 @@ public class Node extends VBox implements NodeCanvasElement {
         });
 
         // default styling
-        setEffect(new DropShadow(10, NodeContext.SHADOW_NODE));
+        DropShadow shadow = new DropShadow(10, NodeContext.SHADOW_NODE);
+        ColorAdjust adjust = new ColorAdjust();
+        adjust.brightnessProperty().bind(Bindings.when(reachable.or(highlight)).then(0).otherwise(-0.5));
+        shadow.setInput(adjust);
+        setEffect(shadow);
         setMinWidth(150);
 
         // initialize default values
@@ -159,6 +162,14 @@ public class Node extends VBox implements NodeCanvasElement {
         widthProperty().addListener(this::updateGroups);
         heightProperty().addListener(this::updateGroups);
 
+    }
+
+    public BooleanProperty highlightProperty() {
+        return highlight;
+    }
+
+    public BooleanProperty reachableProperty() {
+        return reachable;
     }
 
     @Override
@@ -324,6 +335,10 @@ public class Node extends VBox implements NodeCanvasElement {
         titleProperty().set(title);
     }
 
+    public StringProperty subtitleProperty() {
+        return subtitleText;
+    }
+
     public Color getColor() {
         return colorProperty().get();
     }
@@ -334,17 +349,23 @@ public class Node extends VBox implements NodeCanvasElement {
 
     public class NodeTitle extends BorderPane {
         private Label title = new Label();
+        private Label subtitle = new Label();
         private Color color; // simplifies
 
         public NodeTitle() {
-            title.setText("Example");
+            title.textProperty().bind(titleProperty());
+            subtitle.textProperty().bind(subtitleProperty());
             title.setStyle("-fx-font: 14 System");
             setPickOnBounds(false);
             title.setTextFill(Color.WHITE);
             title.setFont(NodeContext.FONT_NODE);
+            subtitle.setTextFill(Color.WHITE);
+            subtitle.setFont(NodeContext.FONT_NODE);
             this.setPadding(new Insets(2, 20, 2, 20));
             this.setHeight(NodeContext.HEIGHT_NODE);
             setCenter(title);
+            setBottom(subtitle);
+            BorderPane.setAlignment(subtitle, Pos.CENTER);
         }
 
         public Color getColor() {

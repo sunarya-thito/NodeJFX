@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.*;
 import javafx.util.StringConverter;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.EnumTypeCaster;
@@ -27,19 +28,20 @@ public class EnumParameter<T extends Enum<T>> extends NodeParameter implements U
     private BorderPane box = new BorderPane();
     public EnumParameter(String fieldName, Class<T> enumClass) {
         fieldText = new Label(fieldName);
+        fieldText.setTextFill(Color.WHITE);
         typeCaster.set(new EnumTypeCaster<>(enumClass));
         ObservableList<T> values = FXCollections.observableArrayList(enumClass.getEnumConstants());
         values.add(0, null);
         input = new ComboBox<>(values);
-        input.setEditable(true);
+        input.setEditable(false);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
         BorderPane.setAlignment(fieldText, Pos.CENTER);
         BorderPane.setAlignment(input, Pos.CENTER_LEFT);
         box.setLeft(fieldText);
         box.setRight(input);
         getContainer().getChildren().add(box);
-        getInputType().set(JavaParameterType.getCastableType(enumClass));
-        getOutputType().set(JavaParameterType.getCastableType(enumClass));
+        getInputType().set(JavaParameterType.getType(enumClass));
+        getOutputType().set(JavaParameterType.getType(enumClass));
         input.setConverter(new StringConverter<T>() {
             @Override
             public String toString(T object) {
@@ -67,6 +69,11 @@ public class EnumParameter<T extends Enum<T>> extends NodeParameter implements U
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Label getLabel() {
+        return fieldText;
     }
 
     @Override

@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.*;
 import javafx.util.StringConverter;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
@@ -20,6 +21,7 @@ public class CharacterParameter extends NodeParameter implements UserInputParame
     private ObjectProperty<TypeCaster<Character>> typeCaster = new SimpleObjectProperty<>(TypeCaster.CHARACTER_TYPE_CASTER);
     public CharacterParameter(String fieldName) {
         fieldText = new Label(fieldName);
+        fieldText.setTextFill(Color.WHITE);
         input = new TextField();
         getContainer().getChildren().add(box);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
@@ -27,8 +29,8 @@ public class CharacterParameter extends NodeParameter implements UserInputParame
         BorderPane.setAlignment(input, Pos.CENTER_LEFT);
         box.setLeft(fieldText);
         box.setRight(input);
-        getInputType().set(JavaParameterType.getCastableType(Character.class));
-        getOutputType().set(JavaParameterType.getCastableType(Character.class));
+        getInputType().set(JavaParameterType.getType(Character.class));
+        getOutputType().set(JavaParameterType.getType(Character.class));
         input.textProperty().bindBidirectional(value, new StringConverter<Object>() {
             @Override
             public String toString(Object object) {
@@ -54,6 +56,11 @@ public class CharacterParameter extends NodeParameter implements UserInputParame
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Label getLabel() {
+        return fieldText;
     }
 
     @Override

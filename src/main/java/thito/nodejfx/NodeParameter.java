@@ -55,6 +55,7 @@ public class NodeParameter extends AnchorPane {
     private BooleanProperty multipleInputAssigner = new SimpleBooleanProperty(), multipleOutputAssigner = new SimpleBooleanProperty();
 
     public NodeParameter() {
+        getStyleClass().add("node-parameter");
         setPickOnBounds(false);
 
         container.setPadding(new Insets(5, 20, 5, 20));
@@ -164,6 +165,9 @@ public class NodeParameter extends AnchorPane {
         }
         inputShape = type.createNewHandler(this, true);
         inputShape.getComponent().layoutXProperty().set(0);
+        if (inputType.get() != null) {
+            inputShape.setColor(inputType.get().inputColorProperty().get());
+        }
         if (allowInput.get()) {
             getChildren().add(inputShape.getComponent());
         }
@@ -208,6 +212,9 @@ public class NodeParameter extends AnchorPane {
         }
         outputShape = type.createNewHandler(this, false);
         outputShape.getComponent().setManaged(false);
+        if (outputType.get() != null) {
+            outputShape.setColor(outputType.get().outputColorProperty().get());
+        }
         outputShape.getComponent().setLayoutX(getWidth());
         if (allowOutput.get()) {
             getChildren().add(outputShape.getComponent());
@@ -328,6 +335,10 @@ public class NodeParameter extends AnchorPane {
             Node node = getNode();
             node.layoutXProperty().addListener(linked);
             node.layoutYProperty().addListener(linked);
+            node.widthProperty().addListener(linked);
+            node.heightProperty().addListener(linked);
+            layoutXProperty().addListener(linked);
+            layoutYProperty().addListener(linked);
             heightProperty().addListener(linked);
             widthProperty().addListener(linked);
             getInputType().addListener(linked);
@@ -342,6 +353,10 @@ public class NodeParameter extends AnchorPane {
             Node node = getNode();
             node.layoutXProperty().removeListener(linked);
             node.layoutYProperty().removeListener(linked);
+            node.widthProperty().removeListener(linked);
+            node.heightProperty().removeListener(linked);
+            layoutXProperty().removeListener(linked);
+            layoutYProperty().removeListener(linked);
             heightProperty().removeListener(linked);
             widthProperty().removeListener(linked);
             getInputType().removeListener(linked);

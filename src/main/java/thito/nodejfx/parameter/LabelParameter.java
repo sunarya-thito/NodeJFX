@@ -13,6 +13,7 @@ public class LabelParameter extends NodeParameter {
     public LabelParameter(String text) {
         this();
         label.setText(text);
+        label.setTextFill(Color.WHITE);
     }
 
     public LabelParameter() {

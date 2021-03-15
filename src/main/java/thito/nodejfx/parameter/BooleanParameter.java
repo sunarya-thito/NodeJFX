@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.*;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
 import thito.nodejfx.parameter.type.JavaParameterType;
@@ -21,6 +22,7 @@ public class BooleanParameter extends NodeParameter implements UserInputParamete
     private ObjectProperty<TypeCaster<Boolean>> typeCaster = new SimpleObjectProperty<>(TypeCaster.BOOLEAN_TYPE_CASTER);
     public BooleanParameter(String fieldName) {
         fieldText = new Label(fieldName);
+        fieldText.setTextFill(Color.WHITE);
         input = new CheckBox();
         getContainer().getChildren().add(box);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
@@ -28,8 +30,8 @@ public class BooleanParameter extends NodeParameter implements UserInputParamete
         BorderPane.setAlignment(input, Pos.CENTER_LEFT);
         box.setLeft(fieldText);
         box.setRight(input);
-        getInputType().set(JavaParameterType.getCastableType(Boolean.class));
-        getOutputType().set(JavaParameterType.getCastableType(Boolean.class));
+        getInputType().set(JavaParameterType.getType(Boolean.class));
+        getOutputType().set(JavaParameterType.getType(Boolean.class));
         TypeCaster.bindBidirectional(value, input.selectedProperty(), typeCaster);
         getUnmodifiableInputLinks().addListener((SetChangeListener<NodeParameter>) change -> {
             if (change.wasRemoved()) {
@@ -45,6 +47,11 @@ public class BooleanParameter extends NodeParameter implements UserInputParamete
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Label getLabel() {
+        return fieldText;
     }
 
     @Override

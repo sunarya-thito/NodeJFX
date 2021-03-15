@@ -29,6 +29,7 @@ public class NodeCanvas extends Pane {
         groups.addListener((ListChangeListener<NodeGroup>) c -> {
             while (c.next()) {
                 for (NodeGroup group : new ArrayList<>(c.getAddedSubList())) {
+                    if (group.getParent() != null) continue;
                     group.initialize(this);
                     groupContainer.getChildren().add(group);
                     group.updateGroups();
@@ -159,7 +160,7 @@ public class NodeCanvas extends Pane {
     public boolean disconnect(NodeParameter source, NodeParameter target) {
         NodeLinked linked = find(source, target);
         if (linked != null) {
-            NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_UNLINKED_EVENT, source, target);
+            NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_UNLINKED_EVENT, null, linked, source, target);
             source.fireEvent(event);
             if (event.isConsumed()) return false;
             target.fireEvent(event);
@@ -208,7 +209,7 @@ public class NodeCanvas extends Pane {
 
     void link(NodeParameter source, NodeParameter target, boolean force) {
         if (!force) {
-            NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKED_EVENT, source, target);
+            NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKED_EVENT, null, null, source, target);
             source.fireEvent(event);
             if (event.isConsumed()) return;
             target.fireEvent(event);

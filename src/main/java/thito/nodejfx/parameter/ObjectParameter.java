@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.paint.*;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
 import thito.nodejfx.parameter.type.JavaParameterType;
@@ -17,14 +18,15 @@ public class ObjectParameter extends NodeParameter implements UserInputParameter
     private Label label;
     public ObjectParameter(String text) {
         this();
+        label.setTextFill(Color.WHITE);
         label.setText(text);
     }
 
     public ObjectParameter() {
         this.label = new Label();
         getContainer().getChildren().add(label);
-        getInputType().set(JavaParameterType.getCastableType(Object.class));
-        getOutputType().set(JavaParameterType.getCastableType(Object.class));
+        getInputType().set(JavaParameterType.getType(Object.class));
+        getOutputType().set(JavaParameterType.getType(Object.class));
     }
 
     public Label getLabel() {

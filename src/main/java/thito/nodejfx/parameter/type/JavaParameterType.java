@@ -68,9 +68,9 @@ public class JavaParameterType<T> implements NodeParameterType {
     @Override
     public boolean isAssignableFrom(NodeParameterType other) {
         return other instanceof JavaParameterType
-                && getType().isAssignableFrom(((JavaParameterType<?>) other).getType())
+                && (getType().isAssignableFrom(((JavaParameterType<?>) other).getType())
                 // for casting support
-                && ((JavaParameterType<?>) other).getType().isAssignableFrom(getType());
+                || ((JavaParameterType<?>) other).getType().isAssignableFrom(getType()));
     }
 
 }

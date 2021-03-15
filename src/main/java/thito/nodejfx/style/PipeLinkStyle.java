@@ -3,9 +3,7 @@ package thito.nodejfx.style;
 import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
+import javafx.scene.shape.*;
 import thito.nodejfx.NodeContext;
 import thito.nodejfx.NodeLink;
 import thito.nodejfx.NodeLinkContainer;
@@ -40,6 +38,8 @@ public class PipeLinkStyle implements NodeLinkStyle {
             path.setPickOnBounds(false);
             path.setFill(Color.TRANSPARENT);
             path.setStrokeWidth(2.5);
+            path.setStrokeLineCap(StrokeLineCap.ROUND);
+            path.setStrokeLineJoin(StrokeLineJoin.ROUND);
             path.getElements().addAll(startLine, endStartLine, verticalLine, endVerticalLine, endLine, endEndLine);
             path.setEffect(new DropShadow(3, NodeContext.SHADOW_NODE));
         }

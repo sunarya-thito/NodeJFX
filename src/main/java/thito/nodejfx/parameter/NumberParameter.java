@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.*;
 import javafx.util.StringConverter;
 import thito.nodejfx.NodeParameter;
 import thito.nodejfx.parameter.converter.TypeCaster;
@@ -22,9 +23,12 @@ public class NumberParameter extends NodeParameter implements UserInputParameter
     private Label fieldText;
     private Spinner<Number> input;
     private BorderPane box = new BorderPane();
-    public NumberParameter(String fieldName) {
+
+    public NumberParameter(String fieldName, Class<?> typeNumber) {
         fieldText = new Label(fieldName);
-        input = new Spinner<>(Integer.MIN_VALUE, Integer.MAX_VALUE, 1);
+        fieldText.setTextFill(Color.WHITE);
+        input = new Spinner<>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+        value.set(0);
         input.setEditable(true);
         BorderPane.setMargin(fieldText, new Insets(0, 20, 0, 0));
         BorderPane.setAlignment(fieldText, Pos.CENTER);
@@ -32,12 +36,15 @@ public class NumberParameter extends NodeParameter implements UserInputParameter
         box.setLeft(fieldText);
         box.setRight(input);
         getContainer().getChildren().add(box);
-        getInputType().set(JavaParameterType.getCastableType(Number.class));
-        getOutputType().set(JavaParameterType.getCastableType(Number.class));
+        getInputType().set(JavaParameterType.getType(Number.class));
+        getOutputType().set(JavaParameterType.getType(Number.class));
         TypeCaster.bindBidirectional(value, input.getValueFactory().valueProperty(), new SimpleObjectProperty<>(new TypeCaster<Number>() {
             @Override
             public Number fromSafeObject(Object obj) {
-                return typeCaster.get().fromSafeObject(obj).intValue();
+                if (!(typeNumber.equals(Double.class) || typeNumber.equals(double.class) || typeNumber.equals(Float.class) || typeNumber.equals(float.class))) {
+                    return typeCaster.get().fromSafeObject(obj).intValue();
+                }
+                return typeCaster.get().fromSafeObject(obj);
             }
 
             @Override
@@ -53,7 +60,10 @@ public class NumberParameter extends NodeParameter implements UserInputParameter
 
             @Override
             public Number fromString(String string) {
-                return typeCaster.get().fromSafeObject(string).intValue();
+                if (!(typeNumber.equals(Double.class) || typeNumber.equals(double.class) || typeNumber.equals(Float.class) || typeNumber.equals(float.class))) {
+                    return typeCaster.get().fromSafeObject(string).intValue();
+                }
+                return typeCaster.get().fromSafeObject(string);
             }
         });
         getUnmodifiableInputLinks().addListener((SetChangeListener<NodeParameter>) change -> {
@@ -70,6 +80,11 @@ public class NumberParameter extends NodeParameter implements UserInputParameter
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Label getLabel() {
+        return fieldText;
     }
 
     @Override
