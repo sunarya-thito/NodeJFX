@@ -14,24 +14,45 @@ public class SpecificParameter extends NodeParameter implements UserInputParamet
     private ObjectProperty<Object> value = new SimpleObjectProperty<>();
     private ObjectProperty<TypeCaster<Object>> typeCaster = new SimpleObjectProperty<>(TypeCaster.PASSTHROUGH_TYPE_CASTER);
     private BooleanProperty disable = new SimpleBooleanProperty();
-    private Class<?> type;
     private Label label;
     private Label gr;
-    public SpecificParameter(String text, String subtext, Class<?> type) {
+    private Tooltip tooltip;
+    public SpecificParameter(String text, String subtext, String tooltipText) {
         this.label = new Label();
         label.setTextOverrun(OverrunStyle.LEADING_WORD_ELLIPSIS);
-        Tooltip tooltip = new Tooltip();
-        label.setTooltip(tooltip);
-        tooltip.textProperty().bind(label.textProperty());
+        tooltip = new Tooltip(tooltipText);
         this.label.setGraphic(gr = new Label(text));
         gr.setTextFill(Color.WHITE);
         label.setGraphicTextGap(5);
         getContainer().getChildren().add(label);
-        this.type = type;
         label.setTextFill(Color.color(1, 1, 1, 0.5));
-        getInputType().set(JavaParameterType.getType(type));
-        getOutputType().set(JavaParameterType.getType(type));
         label.setText(subtext);
+    }
+
+    @Override
+    public javafx.scene.Node getInputComponent() {
+        return null;
+    }
+
+    public Label getSubLabel() {
+        return label;
+    }
+
+    public Tooltip getTooltip() {
+        return tooltip;
+    }
+
+    public void setTooltip(String text) {
+        tooltip.setText(text);
+    }
+
+    public void setSubName(String name) {
+        label.setText(name);
+    }
+
+    @Override
+    public void setName(String name) {
+        gr.setText(name);
     }
 
     @Override

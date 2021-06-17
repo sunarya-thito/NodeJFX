@@ -3,11 +3,9 @@ package thito.nodejfx.style;
 import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
-import thito.nodejfx.NodeContext;
-import thito.nodejfx.NodeLink;
-import thito.nodejfx.NodeLinkContainer;
-import thito.nodejfx.NodeLinkStyle;
+import javafx.scene.shape.*;
+import thito.nodejfx.*;
+import thito.nodejfx.style.active.*;
 
 public class LineLinkStyle implements NodeLinkStyle {
 
@@ -19,6 +17,7 @@ public class LineLinkStyle implements NodeLinkStyle {
     public class LineLinkStyleHandler implements NodeLinkStyleHandler {
         private NodeLink link;
         private Line line;
+        private ActiveLinkHelper activeLinkHelper;
 
         public LineLinkStyleHandler(NodeLink link) {
             this.link = link;
@@ -26,6 +25,23 @@ public class LineLinkStyle implements NodeLinkStyle {
             line.setStrokeWidth(2.5);
             line.setPickOnBounds(false);
             line.setFill(Color.TRANSPARENT);
+            activeLinkHelper = new ActiveLinkHelper(line, link.getEndShape());
+        }
+
+        private boolean active;
+        @Override
+        public void setActive(boolean active) {
+            this.active = active;
+            if (active) {
+                activeLinkHelper.play();
+            } else {
+                activeLinkHelper.stop();
+            }
+        }
+
+        @Override
+        public boolean isActive() {
+            return active;
         }
 
         @Override
@@ -41,10 +57,15 @@ public class LineLinkStyle implements NodeLinkStyle {
         @Override
         public void initialize(NodeLinkContainer container) {
             container.getChildren().add(0, line);
+            activeLinkHelper.setContainer(container);
+            if (active) {
+                activeLinkHelper.play();
+            }
         }
 
         @Override
         public void destroy(NodeLinkContainer container) {
+            activeLinkHelper.stop();
             container.getChildren().remove(line);
         }
 
@@ -55,6 +76,8 @@ public class LineLinkStyle implements NodeLinkStyle {
 
         @Override
         public void update() {
+            activeLinkHelper.setSourceColor(link.getSourceColor());
+            activeLinkHelper.setTargetColor(link.getTargetColor());
             line.setStroke(link.getLinePaint());
             line.setStartX(link.getStartX().get());
             line.setStartY(link.getStartY().get());

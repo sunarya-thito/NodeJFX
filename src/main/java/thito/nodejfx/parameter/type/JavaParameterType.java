@@ -24,6 +24,28 @@ public class JavaParameterType<T> implements NodeParameterType {
         return types.computeIfAbsent(type, key -> new JavaParameterType<>(type, NodeContext.randomBrightColor(1)));
     }
 
+    public static class UnknownParameterType implements NodeParameterType {
+        @Override
+        public String name() {
+            return "?";
+        }
+
+        @Override
+        public ObjectProperty<Color> inputColorProperty() {
+            return new SimpleObjectProperty<>(Color.BLACK);
+        }
+
+        @Override
+        public ObjectProperty<Color> outputColorProperty() {
+            return new SimpleObjectProperty<>(Color.BLACK);
+        }
+
+        @Override
+        public boolean isAssignableFrom(NodeParameterType other) {
+            return true;
+        }
+    }
+
     public static class CastableParameterType<T> extends JavaParameterType<T> {
         public CastableParameterType(Class<T> type, Color color) {
             super(type, color);
@@ -31,7 +53,7 @@ public class JavaParameterType<T> implements NodeParameterType {
 
         @Override
         public boolean isAssignableFrom(NodeParameterType other) {
-            if (other instanceof CastableParameterType) {
+            if (other instanceof CastableParameterType || other instanceof UnknownParameterType) {
                 return true;
             }
             return super.isAssignableFrom(other);
@@ -67,6 +89,10 @@ public class JavaParameterType<T> implements NodeParameterType {
 
     @Override
     public boolean isAssignableFrom(NodeParameterType other) {
+        if (other instanceof UnknownParameterType) return true;
+        if (other instanceof CompoundType) {
+            return true;
+        }
         return other instanceof JavaParameterType
                 && (getType().isAssignableFrom(((JavaParameterType<?>) other).getType())
                 // for casting support

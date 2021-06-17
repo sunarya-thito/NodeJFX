@@ -6,7 +6,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.*;
 import javafx.event.Event;
-import javafx.geometry.Bounds;
+import javafx.geometry.*;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Parent;
@@ -65,6 +65,18 @@ public class NodeGroup extends Group implements NodeCanvasElement {
     private ObjectProperty<Color> controllerColor = new SimpleObjectProperty<>(NodeContext.BACKGROUND_GROUP);
 
     private NodeContext.DragInfo dragInfo;
+
+    private ObjectProperty<Point2D> dropPoint = new SimpleObjectProperty<>();
+    private ObjectProperty<Bounds> resizeBounds = new SimpleObjectProperty<>();
+
+    public ObjectProperty<Bounds> resizeBoundsProperty() {
+        return resizeBounds;
+    }
+
+    @Override
+    public ObjectProperty<Point2D> dropPointProperty() {
+        return dropPoint;
+    }
 
     @Override
     public ElementState getState() {
@@ -257,6 +269,9 @@ public class NodeGroup extends Group implements NodeCanvasElement {
             }
         });
 
+        layoutXProperty().addListener(x -> updateGroups());
+        layoutYProperty().addListener(x -> updateGroups());
+
         // to trigger listeners
         rightPos.set(50);
         bottomPos.set(50);
@@ -322,6 +337,7 @@ public class NodeGroup extends Group implements NodeCanvasElement {
     }
 
     protected void updateGroups() {
+        if (dragInfo != null && dragInfo.isDragging()) return;
         for (NodeCanvasElement node : new ArrayList<>(getElements())) {
             if (!isOnBounds(node)) {
                 getElements().remove(node);
@@ -422,6 +438,14 @@ public class NodeGroup extends Group implements NodeCanvasElement {
             setPickOnBounds(false);
             addEventFilter(MouseEvent.MOUSE_PRESSED, NodeGroup.this::attemptPress);
             addEventHandler(MouseEvent.MOUSE_PRESSED, Event::consume);
+            addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
+                if (resizeBounds.get() == null) {
+                    resizeBounds.set(new BoundingBox(getLeftPos().get(), getTopPos().get(), getRightPos().get() - getLeftPos().get(), getBottomPos().get() - getTopPos().get()));
+                }
+            });
+            addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
+                resizeBounds.set(new BoundingBox(getLeftPos().get(), getTopPos().get(), getRightPos().get() - getLeftPos().get(), getBottomPos().get() - getTopPos().get()));
+            });
         }
 
         public NodeContext.DragInfo getDragInfo() {
@@ -495,7 +519,6 @@ public class NodeGroup extends Group implements NodeCanvasElement {
 
             // note if the text in your text field is styled, then you should also apply the
             // a similar style to the measuring text here if you want to get an accurate measurement.
-
             textProperty().addListener(observable -> {
                 measuringText.setText(getText());
                 setPrefWidth(measureTextWidth(measuringText) + MAGIC_PADDING);

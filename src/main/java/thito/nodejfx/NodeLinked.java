@@ -2,6 +2,7 @@ package thito.nodejfx;
 
 import javafx.animation.*;
 import javafx.beans.*;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
@@ -21,20 +22,22 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
     private NodeParameter source, target;
     private boolean selected;
     private LinkingElement linkingElement;
-    private Tooltip tooltip = new Tooltip("testestestset");
 
     public NodeLinked(NodeLinkContainer container, NodeLinkStyle style, NodeParameter source, NodeParameter target) {
         super(container, style, container.sceneToLocal(source.getOutputLocation()), container.sceneToLocal(target.getInputLocation()),
-                null);
+                source.getOutputShape());
         this.source = source;
         this.target = target;
         invalidated(null);
         linkingElement = new LinkingElement();
         setStyle(style);
+        getEndShape().getComponent().setVisible(false);
     }
 
-    public Tooltip getTooltip() {
-        return tooltip;
+    public void updateColor() {
+        if (getStyle() != null) {
+            getStyle().update();
+        }
     }
 
     private boolean hardHover;
@@ -64,17 +67,33 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
     @Override
     public void setStyle(NodeLinkStyle style) {
         NodeLinkStyle.NodeLinkStyleHandler old = getStyle();
-        if (old != null) {
-            Tooltip.uninstall(old.getComponent(), tooltip);
-        }
         super.setStyle(style);
-        Tooltip.install(getStyle().getComponent(), tooltip);
     }
 
     @Override
     protected void updateStyle() {
         super.updateStyle();
         setHover(selected);
+    }
+
+    @Override
+    public Color getSourceColor() {
+        NodeParameterType inputType = target.getInputType().get();
+        Color inputColor = inputType == null ? null : inputType.inputColorProperty().get();
+        if (inputColor != null) return inputColor;
+        return super.getSourceColor();
+    }
+
+    @Override
+    public Color getTargetColor() {
+        NodeParameterType inputType = target.getInputType().get();
+        NodeParameterType outputType = source.getOutputType().get();
+        Color inputColor = inputType == null ? null : inputType.inputColorProperty().get();
+        Color outputColor = outputType == null ? inputColor : outputType.outputColorProperty().get();
+        if (outputColor != null) {
+            return outputColor;
+        }
+        return super.getTargetColor();
     }
 
     @Override
@@ -120,6 +139,7 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
 
     public class LinkingElement implements NodeCanvasElement {
         private ObservableSet<NodeGroup> groups = FXCollections.emptyObservableSet();
+        private ObjectProperty<Point2D> dropPoint = new SimpleObjectProperty<>();
         @Override
         public NodeCanvas getCanvas() {
             return source.getCanvas();
@@ -134,6 +154,11 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
         public void setSelected(boolean selected) {
             NodeLinked.this.selected = selected;
             updateStyle();
+        }
+
+        @Override
+        public ObjectProperty<Point2D> dropPointProperty() {
+            return dropPoint;
         }
 
         @Override

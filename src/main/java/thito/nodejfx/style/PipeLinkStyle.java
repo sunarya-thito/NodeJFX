@@ -4,10 +4,8 @@ import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import thito.nodejfx.NodeContext;
-import thito.nodejfx.NodeLink;
-import thito.nodejfx.NodeLinkContainer;
-import thito.nodejfx.NodeLinkStyle;
+import thito.nodejfx.*;
+import thito.nodejfx.style.active.*;
 
 public class PipeLinkStyle implements NodeLinkStyle {
 
@@ -25,6 +23,7 @@ public class PipeLinkStyle implements NodeLinkStyle {
         private MoveTo endLine;
         private LineTo endEndLine;
         private NodeLink nodeLink;
+        private ActiveLinkHelper activeLinkHelper;
 
         public PipeLinkStyleHandler(NodeLink nodeLink) {
             this.nodeLink = nodeLink;
@@ -42,6 +41,23 @@ public class PipeLinkStyle implements NodeLinkStyle {
             path.setStrokeLineJoin(StrokeLineJoin.ROUND);
             path.getElements().addAll(startLine, endStartLine, verticalLine, endVerticalLine, endLine, endEndLine);
             path.setEffect(new DropShadow(3, NodeContext.SHADOW_NODE));
+            activeLinkHelper = new ActiveLinkHelper(path, nodeLink.getEndShape());
+        }
+
+        private boolean active;
+        @Override
+        public void setActive(boolean active) {
+            this.active = active;
+            if (active) {
+                activeLinkHelper.play();
+            } else {
+                activeLinkHelper.stop();
+            }
+        }
+
+        @Override
+        public boolean isActive() {
+            return active;
         }
 
         @Override
@@ -57,10 +73,15 @@ public class PipeLinkStyle implements NodeLinkStyle {
         @Override
         public void initialize(NodeLinkContainer container) {
             container.getChildren().add(0, path);
+            activeLinkHelper.setContainer(container);
+            if (active) {
+                activeLinkHelper.play();
+            }
         }
 
         @Override
         public void destroy(NodeLinkContainer container) {
+            activeLinkHelper.stop();
             container.getChildren().remove(path);
         }
 
@@ -71,6 +92,8 @@ public class PipeLinkStyle implements NodeLinkStyle {
 
         @Override
         public void update() {
+            activeLinkHelper.setSourceColor(nodeLink.getSourceColor());
+            activeLinkHelper.setTargetColor(nodeLink.getTargetColor());
             path.setStroke(nodeLink.getLinePaint());
             double x1 = nodeLink.getStartX().get();
             double y1 = nodeLink.getStartY().get();

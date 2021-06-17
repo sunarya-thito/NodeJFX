@@ -1,11 +1,10 @@
 package thito.nodejfx.style;
 
 import javafx.scene.Node;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.CubicCurve;
-import thito.nodejfx.NodeLink;
-import thito.nodejfx.NodeLinkContainer;
-import thito.nodejfx.NodeLinkStyle;
+import javafx.scene.paint.*;
+import javafx.scene.shape.*;
+import thito.nodejfx.*;
+import thito.nodejfx.style.active.*;
 
 public class BezierLinkStyle implements NodeLinkStyle {
 
@@ -17,6 +16,7 @@ public class BezierLinkStyle implements NodeLinkStyle {
     public class BezierLinkStyleHandler implements NodeLinkStyleHandler {
         private CubicCurve curve;
         private NodeLink nodeLink;
+        private ActiveLinkHelper activeLinkHelper;
 
         public BezierLinkStyleHandler(NodeLink nodeLink) {
             this.nodeLink = nodeLink;
@@ -24,6 +24,23 @@ public class BezierLinkStyle implements NodeLinkStyle {
             curve.setFill(Color.TRANSPARENT);
             curve.setPickOnBounds(false);
             curve.setStrokeWidth(2.5);
+            activeLinkHelper = new ActiveLinkHelper(curve, nodeLink.getEndShape());
+        }
+
+        private boolean active;
+        @Override
+        public void setActive(boolean active) {
+            this.active = active;
+            if (active) {
+                activeLinkHelper.play();
+            } else {
+                activeLinkHelper.stop();
+            }
+        }
+
+        @Override
+        public boolean isActive() {
+            return active;
         }
 
         @Override
@@ -39,10 +56,15 @@ public class BezierLinkStyle implements NodeLinkStyle {
         @Override
         public void initialize(NodeLinkContainer container) {
             container.getChildren().add(0, curve);
+            activeLinkHelper.setContainer(container);
+            if (active) {
+                activeLinkHelper.play();
+            }
         }
 
         @Override
         public void destroy(NodeLinkContainer container) {
+            activeLinkHelper.stop();
             container.getChildren().remove(curve);
         }
 
@@ -54,6 +76,8 @@ public class BezierLinkStyle implements NodeLinkStyle {
         @Override
         public void update() {
             curve.setStroke(nodeLink.getLinePaint());
+            activeLinkHelper.setSourceColor(nodeLink.getSourceColor());
+            activeLinkHelper.setTargetColor(nodeLink.getTargetColor());
             double x1 = nodeLink.getStartX().get();
             double y1 = nodeLink.getStartY().get();
             double x2 = nodeLink.getEndX().get();

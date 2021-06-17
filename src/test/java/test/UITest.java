@@ -2,14 +2,17 @@ package test;
 
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Scene;
+import javafx.scene.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import thito.nodejfx.*;
+import thito.nodejfx.Node;
+import thito.nodejfx.event.*;
 import thito.nodejfx.parameter.*;
+import thito.nodejfx.parameter.type.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -90,6 +93,10 @@ public class UITest extends Application {
 
     static int total = 0;
     public static void main(String[] args) {
+        System.setProperty("prism.vsync", "false");
+        System.setProperty("prism.order", "es2,es1,sw,j2d");
+        System.setProperty("prism.forceGPU", "true");
+        System.setProperty("sun.java2d.opengl", "true");
         UITest.launch(UITest.class, args);
 //        List<DS> x = new ArrayList<>();
 //        for (int i = 0; i < 5; i++) x.add(new DS());
@@ -112,6 +119,8 @@ public class UITest extends Application {
         NodeViewport viewport = editor.getViewport();
 
         NodeCanvas canvas = viewport.getCanvas();
+        canvas.nodeLinkStyleProperty().set(NodeLinkStyle.PIPE_STYLE);
+        editor.getCanvas().getSelectionContainer().getMode().set(ToolMode.SELECT);
 
         NodeContext.resizeFont(Font.font(null, FontWeight.BLACK, FontPosture.ITALIC, 125), 10);
 
@@ -140,13 +149,19 @@ public class UITest extends Application {
         Node node = new Node();
         node.getParameters().addAll(
                 new LabelParameter("Test"),
-                new StringParameter("String"),
-                new NumberParameter("Number", Double.class),
-                new EnumParameter<>("Enum", Test.class),
-                new BooleanParameter("Boolean"),
+                castableType(new StringParameter("String")),
+                castableType(new NumberParameter("Number", Double.class)),
+                castableType(new EnumParameter<>("Enum", Test.class)),
+                castableType(new BooleanParameter("Boolean")),
                 new CharacterParameter("Character")
         );
         return node;
+    }
+
+    <T extends NodeParameter> T castableType(T parameter) {
+        parameter.getInputType().set(JavaParameterType.getCastableType(((JavaParameterType) parameter.getInputType().get()).getType()));
+        parameter.getOutputType().set(JavaParameterType.getCastableType(((JavaParameterType) parameter.getOutputType().get()).getType()));
+        return parameter;
     }
 
     public enum Test {

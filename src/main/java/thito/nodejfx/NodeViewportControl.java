@@ -57,7 +57,7 @@ public class NodeViewportControl extends FlowPane {
         getChildren().add(new ZoomViewportControl(getViewport()));
         Button resetPanAndZoomButton = new Button("Reset");
         resetPanAndZoomButton.setOnMouseClicked(event -> {
-            getViewport().setScale(100);
+//            getViewport().setScale(100);
             getViewport().getViewportContainer().setTranslateX(0);
             getViewport().getViewportContainer().setTranslateY(0);
         });
@@ -75,7 +75,7 @@ public class NodeViewportControl extends FlowPane {
                 return null;
             }
         });
-        editor.getSelectionContainer().getMode().bindBidirectional(tools.valueProperty());
+        editor.getCanvas().getSelectionContainer().getMode().bindBidirectional(tools.valueProperty());
         getChildren().add(tools);
         getChildren().add(new ModeButton("X"));
         getChildren().add(new LinkStyleViewportControl(getViewport()));

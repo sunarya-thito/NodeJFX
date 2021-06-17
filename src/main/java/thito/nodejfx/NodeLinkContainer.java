@@ -12,6 +12,7 @@ public class NodeLinkContainer extends Pane {
     private NodeCanvas canvas;
 
     public NodeLinkContainer(NodeCanvas canvas) {
+        setManaged(false);
         this.canvas = canvas;
         setPickOnBounds(false);
         context = new NodeDragContext(this);

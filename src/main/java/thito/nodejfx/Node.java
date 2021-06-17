@@ -6,18 +6,19 @@ import javafx.beans.property.*;
 import javafx.collections.*;
 import javafx.event.Event;
 import javafx.geometry.*;
-import javafx.scene.Parent;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.*;
-import javafx.scene.text.Font;
+import javafx.scene.text.*;
+import thito.nodejfx.internal.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.*;
 
 public class Node extends VBox implements NodeCanvasElement {
 
@@ -30,8 +31,12 @@ public class Node extends VBox implements NodeCanvasElement {
     private SimpleBooleanProperty selected = new SimpleBooleanProperty();
     private NodeCanvas canvas;
     private NodeContext.DragInfo dragInfo;
-    private BooleanProperty reachable = new SimpleBooleanProperty();
+    private BooleanProperty reachableInput = new SimpleBooleanProperty();
+    private BooleanProperty reachableOutput = new SimpleBooleanProperty();
     private BooleanProperty highlight = new SimpleBooleanProperty();
+    private ObjectProperty<Color> shadowProperty = new SimpleObjectProperty<>(NodeContext.SHADOW_NODE);
+
+    private ObjectProperty<Point2D> dropPoint = new SimpleObjectProperty<>(new Point2D(getLayoutX(), getLayoutY()));
 
     public Node() {
         setPickOnBounds(false);
@@ -44,20 +49,57 @@ public class Node extends VBox implements NodeCanvasElement {
         setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(5), new BorderWidths(1))));
         getChildren().add(title);
 
-        getParameters().addListener((ListChangeListener<? super NodeParameter>) c -> {
-            while (c.next()) {
-                NodeContext.iterateLater(c.getRemoved(), x -> {
-                    x.destroy(this);
-                    getChildren().remove(x);
-                });
-                for (NodeParameter x : new ArrayList<>(c.getAddedSubList())) {
-                    x.initialize(this);
-                    getChildren().add(x);
+        getParameters().addListener((ListChangeListener<? super NodeParameter>) change -> {
+            final List<javafx.scene.Node> list = getChildren();
+            synchronized (list) {
+                while (change.next()) {
+                    if (change.wasPermutated()) {
+                        List<javafx.scene.Node> cleared = list.subList(1 + change.getFrom(), 1 + change.getTo());
+                        for (javafx.scene.Node node : cleared) {
+                            if (node instanceof NodeParameter) {
+                                ((NodeParameter) node).destroy(this);
+                            }
+                        }
+                        cleared.clear();
+                        List<? extends NodeParameter> param = change.getList().subList(change.getFrom(), change.getTo());
+                        for (NodeParameter par : param) {
+                            par.initialize(this);
+                        }
+                        list.addAll(1 + change.getFrom(), param);
+                    } else {
+                        if (change.wasRemoved()) {
+                            List<javafx.scene.Node> removed = list.subList(1 + change.getFrom(), 1 + change.getFrom() + change.getRemovedSize());
+                            for (javafx.scene.Node node : removed) {
+                                if (node instanceof NodeParameter) {
+                                    ((NodeParameter) node).destroy(this);
+                                }
+                            }
+                            removed.clear();
+                        }
+                        if (change.wasAdded()) {
+                            List<? extends NodeParameter> parameters = change.getAddedSubList();
+                            for (NodeParameter parameter : parameters) {
+                                parameter.initialize(this);
+                            }
+                            list.addAll(1 + change.getFrom(), parameters);
+                        }
+                    }
                 }
             }
             int index = 0;
             for (NodeParameter n : getParameters()) {
                 n.setSeparated(index > 0);
+                if (n.insertableProperty().get()) {
+                    if (index + 1 < getParameters().size()) {
+                        NodeParameter parameter = getParameters().get(index + 1);
+                        AnchorPane.setTopAnchor(parameter.getContainer(), 5d);
+                    }
+                } else {
+                    if (index + 1 < getParameters().size()) {
+                        NodeParameter parameter = getParameters().get(index + 1);
+                        AnchorPane.setTopAnchor(parameter.getContainer(), 0d);
+                    }
+                }
                 index++;
             }
         });
@@ -148,8 +190,9 @@ public class Node extends VBox implements NodeCanvasElement {
 
         // default styling
         DropShadow shadow = new DropShadow(10, NodeContext.SHADOW_NODE);
+        shadow.colorProperty().bind(shadowProperty);
         ColorAdjust adjust = new ColorAdjust();
-        adjust.brightnessProperty().bind(Bindings.when(reachable.or(highlight)).then(0).otherwise(-0.5));
+        adjust.brightnessProperty().bind(Bindings.when(reachableInput.or(highlight)).then(0).otherwise(-0.5));
         shadow.setInput(adjust);
         setEffect(shadow);
         setMinWidth(150);
@@ -164,12 +207,24 @@ public class Node extends VBox implements NodeCanvasElement {
 
     }
 
+    public ObjectProperty<Color> shadowProperty() {
+        return shadowProperty;
+    }
+
     public BooleanProperty highlightProperty() {
         return highlight;
     }
 
-    public BooleanProperty reachableProperty() {
-        return reachable;
+    public BooleanProperty reachableInputProperty() {
+        return reachableInput;
+    }
+
+    public BooleanProperty reachableOutputProperty() {
+        return reachableOutput;
+    }
+
+    public ObjectProperty<Point2D> dropPointProperty() {
+        return dropPoint;
     }
 
     @Override
@@ -349,23 +404,33 @@ public class Node extends VBox implements NodeCanvasElement {
 
     public class NodeTitle extends BorderPane {
         private Label title = new Label();
-        private Label subtitle = new Label();
+//        private Label subtitle = new Label();
         private Color color; // simplifies
 
         public NodeTitle() {
             title.textProperty().bind(titleProperty());
-            subtitle.textProperty().bind(subtitleProperty());
-            title.setStyle("-fx-font: 14 System");
+//            Tooltip tooltip = new Tooltip();
+//            tooltip.textProperty().bind(subtitleProperty());
+//            title.setTooltip(tooltip);
+//            subtitle.textProperty().bind(subtitleProperty());
+//            title.setStyle("-fx-font: 14 System");
+            title.setFont(Font.font("system", 14));
+            title.setTextAlignment(TextAlignment.CENTER);
+            title.setAlignment(Pos.CENTER);
             setPickOnBounds(false);
             title.setTextFill(Color.WHITE);
             title.setFont(NodeContext.FONT_NODE);
-            subtitle.setTextFill(Color.WHITE);
-            subtitle.setFont(NodeContext.FONT_NODE);
-            this.setPadding(new Insets(2, 20, 2, 20));
+//            subtitle.setTextFill(Color.WHITE);
+//            subtitle.setFont(NodeContext.FONT_NODE);
+            this.setPadding(new Insets(7, 20, 7, 20));
             this.setHeight(NodeContext.HEIGHT_NODE);
             setCenter(title);
-            setBottom(subtitle);
-            BorderPane.setAlignment(subtitle, Pos.CENTER);
+//            setBottom(subtitle);
+//            BorderPane.setAlignment(subtitle, Pos.CENTER);
+        }
+
+        public Label getLabel() {
+            return title;
         }
 
         public Color getColor() {

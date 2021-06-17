@@ -36,13 +36,13 @@ public class ZoomViewportControl extends BorderPane {
 
         zoom.setEditable(true);
         zoom.setPrefWidth(80);
-        viewport.scaleProperty().addListener((obs, oldVal, newVal) -> {
-            if (editing) return;
-            zoom.getValueFactory().setValue(newVal.intValue());
-        });
+//        viewport.scaleProperty().addListener((obs, oldVal, newVal) -> {
+//            if (editing) return;
+//            zoom.getValueFactory().setValue(newVal.intValue());
+//        });
         zoom.valueProperty().addListener((obs, oldVal, newVal) -> {
             editing = true;
-            viewport.setScale(newVal.intValue());
+//            viewport.setScale(newVal.intValue());
             editing = false;
         });
         setAlignment(label, Pos.CENTER);

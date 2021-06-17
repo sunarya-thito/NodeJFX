@@ -1,5 +1,6 @@
 package thito.nodejfx;
 
+import javafx.beans.property.*;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -25,4 +26,5 @@ public interface NodeCanvasElement {
     NodeContext.DragInfo getDragInfo();
     ElementState getState();
     void loadState(ElementState state);
+    ObjectProperty<Point2D> dropPointProperty();
 }

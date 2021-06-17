@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.SetChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.*;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -47,6 +48,16 @@ public class BooleanParameter extends NodeParameter implements UserInputParamete
         });
         getMultipleInputAssigner().set(false);
         getMultipleOutputAssigner().set(true);
+    }
+
+    @Override
+    public Node getInputComponent() {
+        return input;
+    }
+
+    @Override
+    public void setName(String name) {
+        fieldText.setText(name);
     }
 
     @Override

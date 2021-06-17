@@ -1,7 +1,7 @@
 package thito.nodejfx;
 
 import javafx.event.Event;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 
 public class NodeDragListener {
     private NodeParameter parameter;
@@ -16,7 +16,13 @@ public class NodeDragListener {
         node.setOnMousePressed(event -> {
             NodeDragContext context = getContext();
             if (event.isPrimaryButtonDown() && context != null) {
-                if (event.isShiftDown() || (input ? parameter.inputLinks().isEmpty() : parameter.outputLinks().isEmpty())) {
+                NodeViewport viewport = context.getContainer().getCanvas().getViewport();
+                if (viewport != null) {
+                    viewport.getAnimationRequested().add(this);
+                }
+                if (input ? parameter.inputLinks().isEmpty() : parameter.outputLinks().isEmpty()) {
+                    context.startDragging(this, event.getSceneX(), event.getSceneY());
+                } else if (event.isShiftDown() && (input ? parameter.getMultipleInputAssigner().get() : parameter.getMultipleOutputAssigner().get())) {
                     context.startDragging(this, event.getSceneX(), event.getSceneY());
                 } else {
                     context.startReallocating(this, event.getSceneX(), event.getSceneY());
@@ -28,6 +34,12 @@ public class NodeDragListener {
         node.setOnMouseDragged(event -> {
             NodeDragContext context = getContext();
             if (event.isPrimaryButtonDown() && context != null) {
+                NodeViewport viewport = context.getContainer().getCanvas().getViewport();
+                if (viewport != null) {
+                    Point2D point = viewport.sceneToLocal(event.getSceneX(), event.getSceneY());
+                    viewport.xOverflowProperty().set(point.getX());
+                    viewport.yOverflowProperty().set(point.getY());
+                }
                 for (NodeLinking linking : context.getNodeLinking()) {
                     double x = event.getSceneX();
                     double y = event.getSceneY();
@@ -44,6 +56,10 @@ public class NodeDragListener {
         node.setOnMouseReleased(event -> {
             NodeDragContext context = getContext();
             if (context != null) {
+                NodeViewport viewport = context.getContainer().getCanvas().getViewport();
+                if (viewport != null) {
+                    viewport.getAnimationRequested().remove(this);
+                }
                 context.stopDragging(event.getSceneX(), event.getSceneY());
             }
             event.consume();

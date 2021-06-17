@@ -24,6 +24,10 @@ public interface NodeLinkStyle {
 
         void update();
 
+        void setActive(boolean active);
+
         NodeLinkStyle getStyle();
+
+        boolean isActive();
     }
 }

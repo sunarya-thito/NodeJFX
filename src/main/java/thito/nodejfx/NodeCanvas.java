@@ -1,9 +1,9 @@
 package thito.nodejfx;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.collections.*;
 import javafx.geometry.Point2D;
+import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import thito.nodejfx.event.NodeLinkEvent;
@@ -22,10 +22,18 @@ public class NodeCanvas extends Pane {
     private ObjectProperty<NodeLinkStyle> style = new SimpleObjectProperty<>(NodeLinkStyle.BEZIER_STYLE);
     private ObservableSet<NodeCanvasElement> selectedNodes = FXCollections.observableSet(ConcurrentHashMap.newKeySet());
     private ObservableList<NodeGroup> groups = FXCollections.observableArrayList();
+    private BooleanProperty snapToGrid = new SimpleBooleanProperty(true);
+    private NodeSelectionContainer selectionContainer = new NodeSelectionContainer(this);
+    private NodeViewport viewport;
 
     public NodeCanvas() {
         setManaged(false);
         linkContainer = new NodeLinkContainer(this);
+
+        setCache(true);
+        setCacheShape(true);
+        setCacheHint(CacheHint.SPEED);
+
         groups.addListener((ListChangeListener<NodeGroup>) c -> {
             while (c.next()) {
                 for (NodeGroup group : new ArrayList<>(c.getAddedSubList())) {
@@ -60,12 +68,14 @@ public class NodeCanvas extends Pane {
                 });
             }
         });
-        getChildren().addAll(groupHighlightContainer, linkContainer, nodeContainer, groupContainer);
+
+        getChildren().addAll(groupHighlightContainer, linkContainer, nodeContainer, groupContainer, selectionContainer);
         style.addListener((obs, oldValue, newValue) -> {
             for (NodeLink link : linkContainer.getLinks()) {
                 link.setStyle(newValue);
             }
         });
+
         selectedNodes.addListener((SetChangeListener<NodeCanvasElement>) change -> {
             if (change.wasRemoved()) {
                 if (change.getElementRemoved().isSelected()) {
@@ -92,6 +102,22 @@ public class NodeCanvas extends Pane {
                 }
             }
         });
+    }
+
+    public NodeSelectionContainer getSelectionContainer() {
+        return selectionContainer;
+    }
+
+    public NodeViewport getViewport() {
+        return viewport;
+    }
+
+    protected void setViewport(NodeViewport viewport) {
+        this.viewport = viewport;
+    }
+
+    public BooleanProperty snapToGridProperty() {
+        return snapToGrid;
     }
 
     public NodeLinkContainer getLinkContainer() {
@@ -149,31 +175,50 @@ public class NodeCanvas extends Pane {
         }
     }
 
-    public boolean connect(NodeParameter source, NodeParameter target) {
-        if (!checkAssignable(source, target)) return false;
-        link(source, target, false);
+    public NodeLinked connect(NodeParameter source, NodeParameter target) {
+        if (!checkAssignable(source, target)) return null;
+        NodeLinked linked = link(source, target, false);
         source.outputLinks().add(target);
         target.inputLinks().add(source);
-        return true;
+        return linked;
     }
 
-    public boolean disconnect(NodeParameter source, NodeParameter target) {
+    public NodeLinked forceConnect(NodeParameter source, NodeParameter target) {
+        NodeLinked linked = new NodeLinked(linkContainer, style.get(), source, target);
+        linkContainer.addLink(linked);
+        source.outputLinks().add(target);
+        target.inputLinks().add(source);
+        return linked;
+    }
+
+    public NodeLinked disconnect(NodeParameter source, NodeParameter target) {
         NodeLinked linked = find(source, target);
         if (linked != null) {
             NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_UNLINKED_EVENT, null, linked, source, target);
             source.fireEvent(event);
-            if (event.isConsumed()) return false;
+            if (event.isConsumed()) return null;
             target.fireEvent(event);
-            if (event.isConsumed()) return false;
+            if (event.isConsumed()) return null;
             linkContainer.removeLink(linked);
             source.outputLinks().remove(target);
             target.inputLinks().remove(source);
-            return true;
+            return linked;
         }
-        return false;
+        return null;
+    }
+
+    private boolean handleNodeRemoval = true;
+
+    public boolean isHandleNodeRemoval() {
+        return handleNodeRemoval;
+    }
+
+    public void setHandleNodeRemoval(boolean handleNodeRemoval) {
+        this.handleNodeRemoval = handleNodeRemoval;
     }
 
     void destroy(Node node) {
+        if (!handleNodeRemoval) return;
         for (NodeParameter parameter : node.getParameters()) {
             destroy(node, parameter);
         }
@@ -195,7 +240,13 @@ public class NodeCanvas extends Pane {
         if (!source.getAllowOutput().get() || !target.getAllowInput().get()) {
             return false;
         }
+        if (!target.isAssignableFrom(source)) {
+            return false;
+        }
         if (!target.getInputType().get().isAssignableFrom(source.getOutputType().get())) {
+            return false;
+        }
+        if (!source.getOutputType().get().isAssignableFrom(target.getInputType().get())) {
             return false;
         }
         if (!source.getMultipleOutputAssigner().get()&& !source.outputLinks().isEmpty()) {
@@ -207,15 +258,19 @@ public class NodeCanvas extends Pane {
         return true;
     }
 
-    void link(NodeParameter source, NodeParameter target, boolean force) {
+    NodeLinked link(NodeParameter source, NodeParameter target, boolean force) {
+        NodeLinked linked = new NodeLinked(linkContainer, style.get(), source, target);
         if (!force) {
-            NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKED_EVENT, null, null, source, target);
+            NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKED_EVENT, null, linked, source, target);
             source.fireEvent(event);
-            if (event.isConsumed()) return;
+            if (event.isConsumed()) return null;
             target.fireEvent(event);
-            if (event.isConsumed()) return;
+            if (event.isConsumed()) return null;
+            fireEvent(event);
+            if (event.isConsumed()) return null;
         }
-        linkContainer.addLink(new NodeLinked(linkContainer, style.get(), source, target));
+        linkContainer.addLink(linked);
+        return linked;
     }
 
     protected NodeLinked find(NodeParameter source, NodeParameter target) {

@@ -1,32 +1,46 @@
 package thito.nodejfx;
 
 import javafx.geometry.*;
+import javafx.scene.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
+import javafx.scene.shape.*;
 
 import java.util.*;
 
 public class NodeEditor extends AnchorPane {
+    public static <T extends Region> T clip(T region) {
+        Rectangle rectangle = new Rectangle();
+        rectangle.widthProperty().bind(region.widthProperty());
+        rectangle.heightProperty().bind(region.heightProperty());
+        region.clipProperty().set(rectangle);
+        return region;
+    }
     private NodeViewport viewport;
     private NodeViewportControl control;
-    private NodeSelectionContainer selectionContainer;
     private NodeProperties properties = new NodeProperties();
     public NodeEditor() {
         viewport = newViewport();
 
-        selectionContainer = new NodeSelectionContainer(viewport.getCanvas());
-        selectionContainer.setManaged(false);
+        setCache(true);
+        setCacheShape(true);
+        setCacheHint(CacheHint.SPEED);
 
         setTopAnchor(viewport, 0d);
         setBottomAnchor(viewport, 0d);
         setRightAnchor(viewport, 0d);
         setLeftAnchor(viewport, 0d);
 
-        setOnMousePressed(event -> {
+        clip(this);
+        clip(viewport);
+
+        viewport.maxHeightProperty().bind(heightProperty());
+        viewport.maxWidthProperty().bind(widthProperty());
+
+        addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
             if (event.getButton() == MouseButton.PRIMARY && !event.isControlDown()) {
                 viewport.getCanvas().getSelectedNodes().clear();
             }
-            event.consume();
         });
 
         control = newControl();
@@ -34,48 +48,7 @@ public class NodeEditor extends AnchorPane {
         setBottomAnchor(control, 20d);
         setLeftAnchor(control, 20d);
 
-        getChildren().addAll(viewport, selectionContainer); // was adding control, but nvm
-
-        addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
-            if (event.isPrimaryButtonDown()) {
-                requestFocus();
-                getSelectionContainer().startDragging(event.getX(), event.getY(), event.isControlDown());
-                event.consume();
-            }
-        });
-
-        addEventHandler(MouseEvent.MOUSE_DRAGGED, event -> {
-            if (event.isPrimaryButtonDown()) {
-                double moveSpeed = 5;
-                double x = event.getX();
-                double y = event.getY();
-                double width = getWidth();
-                double height = getHeight();
-                Pane pane = getViewport().getViewportContainer();
-                if (x < 1) {
-                    pane.setTranslateX(pane.getTranslateX() + moveSpeed);
-                    getSelectionContainer().getStartX().set(getSelectionContainer().getStartX().get() + moveSpeed);
-                }
-                if (y < 1) {
-                    pane.setTranslateY(pane.getTranslateY() + moveSpeed);
-                    getSelectionContainer().getStartY().set(getSelectionContainer().getStartY().get() + moveSpeed);
-                }
-                if (x >= width - 1) {
-                    pane.setTranslateX(pane.getTranslateX() - moveSpeed);
-                    getSelectionContainer().getStartX().set(getSelectionContainer().getStartX().get() - moveSpeed);
-                }
-                if (y >= height - 1) {
-                    pane.setTranslateY(pane.getTranslateY() - moveSpeed);
-                    getSelectionContainer().getStartY().set(getSelectionContainer().getStartY().get() - moveSpeed);
-                }
-                getSelectionContainer().moveDrag(x, y, event.isShiftDown());
-                event.consume();
-            }
-        });
-
-        addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
-            getSelectionContainer().stopDragging();
-        });
+        getChildren().addAll(viewport); // was adding control, but nvm
 
         addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             Pane dummyNode = getViewport().getViewportContainer();
@@ -106,18 +79,18 @@ public class NodeEditor extends AnchorPane {
             } else if (properties.HOTKEY_PAN_MACRO_RIGHT.get().match(event)) {
                 dummyNode.setTranslateX(dummyNode.getTranslateX() + properties.MACRO_PAN.get());
                 event.consume();
-            } else if (properties.HOTKEY_ZOOM_MICRO_UP.get().match(event)) {
-                getViewport().setScale(getViewport().getScale() + properties.MICRO_ZOOM.get());
-                event.consume();
-            } else if (properties.HOTKEY_ZOOM_MICRO_DOWN.get().match(event)) {
-                getViewport().setScale(getViewport().getScale() - properties.MICRO_ZOOM.get());
-                event.consume();
-            } else if (properties.HOTKEY_ZOOM_MACRO_UP.get().match(event)) {
-                getViewport().setScale(getViewport().getScale() + properties.MACRO_ZOOM.get());
-                event.consume();
-            } else if (properties.HOTKEY_ZOOM_MACRO_DOWN.get().match(event)) {
-                getViewport().setScale(getViewport().getScale() - properties.MACRO_ZOOM.get());
-                event.consume();
+//            } else if (properties.HOTKEY_ZOOM_MICRO_UP.get().match(event)) {
+//                getViewport().setScale(getViewport().getScale() + properties.MICRO_ZOOM.get());
+//                event.consume();
+//            } else if (properties.HOTKEY_ZOOM_MICRO_DOWN.get().match(event)) {
+//                getViewport().setScale(getViewport().getScale() - properties.MICRO_ZOOM.get());
+//                event.consume();
+//            } else if (properties.HOTKEY_ZOOM_MACRO_UP.get().match(event)) {
+//                getViewport().setScale(getViewport().getScale() + properties.MACRO_ZOOM.get());
+//                event.consume();
+//            } else if (properties.HOTKEY_ZOOM_MACRO_DOWN.get().match(event)) {
+//                getViewport().setScale(getViewport().getScale() - properties.MACRO_ZOOM.get());
+//                event.consume();
             } else if (properties.HOTKEY_SELECT_ALL.get().match(event)) {
                 getCanvas().getSelectedNodes().addAll(getCanvas().getNodes());
                 getCanvas().getSelectedNodes().addAll(getCanvas().getGroups());
@@ -142,10 +115,6 @@ public class NodeEditor extends AnchorPane {
 
     public void setProperties(NodeProperties properties) {
         this.properties = properties;
-    }
-
-    public NodeSelectionContainer getSelectionContainer() {
-        return selectionContainer;
     }
 
     public NodeViewport getViewport() {

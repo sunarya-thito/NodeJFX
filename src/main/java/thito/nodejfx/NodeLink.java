@@ -36,8 +36,7 @@ public class NodeLink {
         endY.set(end.getY());
 
         listener = e -> {
-            if (
-                            endShape != null) {
+            if (endShape != null) {
                 endShape.setColor(getLinePaint());
             }
             this.style.update();
@@ -88,6 +87,7 @@ public class NodeLink {
     }
 
     public void setStyle(NodeLinkStyle style) {
+        boolean wasActive = this.style != null && this.style.isActive();
         if (this.style != null && container != null) {
             this.style.destroy(container);
         }
@@ -97,6 +97,20 @@ public class NodeLink {
             this.style.update();
         }
         updateStyle();
+        if (wasActive) {
+            this.style.setActive(true);
+        }
+    }
+
+    public Color getSourceColor() {
+        return Color.DARKGRAY;
+    }
+    public Color getTargetColor() {
+        return Color.DARKGRAY;
+    }
+
+    public NodeLinkShape.NodeLinkShapeHandler getEndShape() {
+        return endShape;
     }
 
     public Paint getLinePaint() {

@@ -1,28 +1,32 @@
 package thito.nodejfx;
 
 import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
-import javafx.event.EventHandler;
+import javafx.event.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.layout.*;
 import thito.nodejfx.event.NodeLinkEvent;
-import thito.nodejfx.internal.EventHandlerProperty;
+import thito.nodejfx.internal.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.*;
 
 public class NodeParameter extends AnchorPane {
 
     private SimpleBooleanProperty allowInput = new SimpleBooleanProperty();
     private SimpleBooleanProperty allowOutput = new SimpleBooleanProperty();
+
+    private SimpleBooleanProperty removable = new SimpleBooleanProperty();
+
     private SimpleObjectProperty<NodeParameterType> inputType = new SimpleObjectProperty<>();
     private SimpleObjectProperty<NodeParameterType> outputType = new SimpleObjectProperty<>();
 
@@ -37,6 +41,7 @@ public class NodeParameter extends AnchorPane {
     private EventHandlerProperty<NodeLinkEvent> onNodeLinkedEvent = new EventHandlerProperty<>();
     private EventHandlerProperty<NodeLinkEvent> onNodeLinkingEvent = new EventHandlerProperty<>();
     private EventHandlerProperty<NodeLinkEvent> onNodeUnlinkedEvent = new EventHandlerProperty<>();
+    private EventHandlerProperty<Event> onRemovedEvent = new EventHandlerProperty<>();
 
     //
 
@@ -50,9 +55,13 @@ public class NodeParameter extends AnchorPane {
 
     private NodeDragListener inputDrag, outputDrag;
 
+    private CrossButton crossButton = new CrossButton().asRemove();
+    private CrossButton addButton = new CrossButton().asAdd();
+
     private Node node;
 
     private BooleanProperty multipleInputAssigner = new SimpleBooleanProperty(), multipleOutputAssigner = new SimpleBooleanProperty();
+    private BooleanProperty insertable = new SimpleBooleanProperty();
 
     public NodeParameter() {
         getStyleClass().add("node-parameter");
@@ -64,16 +73,87 @@ public class NodeParameter extends AnchorPane {
         setBottomAnchor(container, 0d);
         setLeftAnchor(container, 0d);
         setRightAnchor(container, 0d);
+        removable.addListener((obs, old, val) -> {
+            if (val) {
+                setRightAnchor(container, 25d);
+                getChildren().add(crossButton);
+            } else {
+                setRightAnchor(container, 0d);
+                getChildren().remove(crossButton);
+            }
+        });
+
+        insertable.addListener((obs, old, val) -> {
+            if (val) {
+                getChildren().add(addButton);
+                if (node != null) {
+                    int index = node.getParameters().indexOf(this) + 1;
+                    if (index >= 0 && index < node.getParameters().size()) {
+                        NodeParameter parameter = node.getParameters().get(index);
+                        if (parameter != null) {
+                            setTopAnchor(parameter.container, 5d);
+                        }
+                    }
+                }
+                setBottomAnchor(container, 5d);
+            } else {
+                getChildren().remove(addButton);
+                if (node != null) {
+                    int index = node.getParameters().indexOf(this) + 1;
+                    if (index >= 0 && index < node.getParameters().size()) {
+                        NodeParameter parameter = node.getParameters().get(index);
+                        if (parameter != null) {
+                            setTopAnchor(parameter.container, 0d);
+                        }
+                    }
+                }
+                setBottomAnchor(container, 0d);
+            }
+        });
+
+        addButton.setMaxHeight(10);
+        addButton.setMaxWidth(10);
+        addButton.setPrefHeight(10);
+        addButton.setPrefWidth(10);
+        setBottomAnchor(addButton, -5d);
+
+        setRightAnchor(crossButton, 20d);
+        crossButton.setOnMouseClicked(event -> {
+            removeParameter();
+        });
+
+//        unmodifiableInputLinks.addListener(new InvalidationListener() {
+//            @Override
+//            public void invalidated(Observable observable) {
+//                if (node != null) {
+//                    node.layout();
+//                }
+//            }
+//        });
+//
+//        unmodifiableOutputLinks.addListener(new InvalidationListener() {
+//            @Override
+//            public void invalidated(Observable observable) {
+//                if (node != null) {
+//                    node.layout();
+//                }
+//            }
+//        });
 
         getChildren().add(container);
 
         heightProperty().addListener((obs, oldValue, newValue) -> {
             inputShape.getComponent().layoutYProperty().set(newValue.doubleValue() / 2d);
             outputShape.getComponent().layoutYProperty().set(newValue.doubleValue() / 2d);
+            setTopAnchor(crossButton, (newValue.doubleValue() - crossButton.getPrefHeight()) / 2d);
         });
 
         widthProperty().addListener((obs, old, val) -> {
             outputShape.getComponent().layoutXProperty().set(val.doubleValue());
+            if (node != null) {
+                node.layout();
+            }
+            setLeftAnchor(addButton, (val.doubleValue() - addButton.getPrefHeight()) / 2d);
         });
 
         allowInput.addListener((obs, oldValue, newValue) -> {
@@ -106,6 +186,16 @@ public class NodeParameter extends AnchorPane {
                 oldValue.inputColorProperty().removeListener(updateListener);
             }
             newValue.inputColorProperty().addListener(updateListener);
+            if (getCanvas() != null) {
+                for (NodeParameter input : new ArrayList<>(getUnmodifiableInputLinks())) {
+                    if (!getInputType().get().isAssignableFrom(input.getOutputType().get()) || !input.getOutputType().get().isAssignableFrom(getInputType().get())) {
+                        getCanvas().disconnect(input, this);
+                    } else {
+                        NodeLinked linked = getCanvas().find(input, this);
+                        linked.updateColor();
+                    }
+                }
+            }
         });
 
         outputType.addListener((obs, oldValue, newValue) -> {
@@ -114,6 +204,16 @@ public class NodeParameter extends AnchorPane {
                 oldValue.outputColorProperty().removeListener(updateListener);
             }
             newValue.outputColorProperty().addListener(updateListener);
+            if (getCanvas() != null) {
+                for (NodeParameter output : new ArrayList<>(getUnmodifiableOutputLinks())) {
+                    if (!getOutputType().get().isAssignableFrom(output.getInputType().get()) || !output.getInputType().get().isAssignableFrom(getOutputType().get())) {
+                        getCanvas().disconnect(this, output);
+                    } else {
+                        NodeLinked linked = getCanvas().find(this, output);
+                        linked.updateColor();
+                    }
+                }
+            }
         });
 
         // event handler
@@ -153,10 +253,57 @@ public class NodeParameter extends AnchorPane {
         allowOutput.set(true);
         inputType.set(NodeParameterType.DEFAULT_TYPE);
         outputType.set(NodeParameterType.DEFAULT_TYPE);
+
+    }
+
+    public BooleanProperty insertableProperty() {
+        return insertable;
+    }
+
+    public CrossButton getAddButton() {
+        return addButton;
+    }
+
+    public void removeParameter() {
+        if (node != null) {
+            node.getParameters().remove(this);
+            onRemovedEvent.handle(new Event(EventType.ROOT));
+        }
+    }
+
+    public void setOnRemovedEvent(EventHandler<Event> onRemovedEvent) {
+        this.onRemovedEvent.set(onRemovedEvent);
+    }
+
+    public SimpleBooleanProperty removableProperty() {
+        return removable;
+    }
+
+    public void setRemovable(boolean removable) {
+        this.removable.set(removable);
+    }
+
+    public boolean isRemovable() {
+        return removable.get();
     }
 
     public NodeParameterContainer getContainer() {
         return container;
+    }
+
+    private Set<Predicate<NodeParameter>> filter = new HashSet<>();
+
+    public Set<Predicate<NodeParameter>> getFilter() {
+        return filter;
+    }
+
+    public boolean isAssignableFrom(NodeParameter source) {
+        for (Predicate<NodeParameter> f : filter) {
+            if (!f.test(source)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void setInputShape(NodeLinkShape type) {
@@ -165,6 +312,7 @@ public class NodeParameter extends AnchorPane {
         }
         inputShape = type.createNewHandler(this, true);
         inputShape.getComponent().layoutXProperty().set(0);
+        inputShape.getComponent().setLayoutY(getHeight()/2d);
         if (inputType.get() != null) {
             inputShape.setColor(inputType.get().inputColorProperty().get());
         }
@@ -216,6 +364,7 @@ public class NodeParameter extends AnchorPane {
             outputShape.setColor(outputType.get().outputColorProperty().get());
         }
         outputShape.getComponent().setLayoutX(getWidth());
+        outputShape.getComponent().setLayoutY(getHeight()/2d);
         if (allowOutput.get()) {
             getChildren().add(outputShape.getComponent());
         }
@@ -287,6 +436,14 @@ public class NodeParameter extends AnchorPane {
     }
 
     protected void destroy(Node node) {
+        if (node != null) {
+            for (NodeParameter output : getUnmodifiableOutputLinks()) {
+                node.getCanvas().disconnect(this, output);
+            }
+            for (NodeParameter input : getUnmodifiableInputLinks()) {
+                node.getCanvas().disconnect(input, this);
+            }
+        }
         this.node = null;
     }
 
@@ -307,6 +464,7 @@ public class NodeParameter extends AnchorPane {
         if (separated) {
             if (separator == null) {
                 separator = new HBox();
+                separator.setMouseTransparent(true);
                 separator.setBackground(new Background(new BackgroundFill(NodeContext.BACKGROUND_SEPARATOR, null, new Insets(0, 10, 0, 10))));
                 separator.setMinHeight(1);
                 separator.minWidthProperty().bind(widthProperty());

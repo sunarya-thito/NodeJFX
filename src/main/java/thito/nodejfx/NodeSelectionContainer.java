@@ -33,7 +33,6 @@ public class NodeSelectionContainer extends Pane {
     private boolean dragging;
     public NodeSelectionContainer(NodeCanvas canvas) {
         selection = new NodeSelection(canvas);
-//        setPickOnBounds(false);
         setMouseTransparent(true);
         this.canvas = canvas;
     }
@@ -54,10 +53,8 @@ public class NodeSelectionContainer extends Pane {
         double width = x2 - x;
         double height = y2 - y;
         if (grouping != null) {
-//            Point2D point = canvas.sceneToLocal(x, y);
-//            Point2D point2 = canvas.sceneToLocal(x2, y2);
-            Point2D point = canvas.getParent().parentToLocal(canvas.parentToLocal(x, y));
-            Point2D point2 = canvas.getParent().parentToLocal(canvas.parentToLocal(x2, y2));
+            Point2D point = localToParent(x, y);
+            Point2D point2 = localToParent(x2, y2);
             x = point.getX();
             y = point.getY();
             x2 = point2.getX();
@@ -86,13 +83,16 @@ public class NodeSelectionContainer extends Pane {
         return canvas;
     }
 
-    public void startDragging(double sceneX, double sceneY, boolean addSelection) {
+    public void startDragging(double x, double y, boolean addSelection) {
+        Point2D point = sceneToLocal(x, y);
+        x = point.getX();
+        y = point.getY();
         stopDragging();
         dragging = true;
-        startX.set(sceneX);
-        startY.set(sceneY);
-        endX.set(sceneX);
-        endY.set(sceneY);
+        startX.set(x);
+        startY.set(y);
+        endX.set(x);
+        endY.set(y);
         if (mode.get() == ToolMode.GROUPING) {
             grouping = new NodeGroup();
             getCanvas().getGroups().add(grouping);
@@ -106,10 +106,13 @@ public class NodeSelectionContainer extends Pane {
         getChildren().add(selection);
     }
 
-    public void moveDrag(double sceneX, double sceneY, boolean intersecting) {
+    public void moveDrag(double x, double y, boolean intersecting) {
         if (!isDragging()) return;
-        endX.set(sceneX);
-        endY.set(sceneY);
+        Point2D point = sceneToLocal(x, y);
+        x = point.getX();
+        y = point.getY();
+        endX.set(x);
+        endY.set(y);
         if (grouping == null) {
             refreshSelection(intersecting);
         }

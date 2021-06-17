@@ -5,6 +5,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
+import javafx.scene.*;
 import javafx.scene.control.Label;
 import javafx.scene.paint.*;
 import thito.nodejfx.NodeParameter;
@@ -27,6 +28,16 @@ public class ObjectParameter extends NodeParameter implements UserInputParameter
         getContainer().getChildren().add(label);
         getInputType().set(JavaParameterType.getType(Object.class));
         getOutputType().set(JavaParameterType.getType(Object.class));
+    }
+
+    @Override
+    public Node getInputComponent() {
+        return null;
+    }
+
+    @Override
+    public void setName(String name) {
+        label.setText(name);
     }
 
     public Label getLabel() {
