@@ -1,9 +1,11 @@
 package thito.nodejfx;
 
+import com.sun.glass.ui.*;
 import javafx.application.*;
 import javafx.beans.property.*;
 import javafx.geometry.*;
 import javafx.scene.*;
+import javafx.scene.Cursor;
 import javafx.scene.input.*;
 import javafx.scene.paint.*;
 import javafx.scene.text.*;
@@ -31,7 +33,14 @@ public interface NodeContext {
             FONT_NODE = Font.font(null, FontWeight.BLACK, -1);
     int
             HEIGHT_NODE = 50;
+    Robot robot = com.sun.glass.ui.Application.GetApplication().createRobot();
+    static double getMouseX() {
+        return robot.getMouseX();
+    }
 
+    static double getMouseY() {
+        return robot.getMouseY();
+    }
     static Color randomColor() {
         Random random = new Random();
         return Color.color(random.nextDouble(), random.nextDouble(), random.nextDouble());
@@ -54,13 +63,14 @@ public interface NodeContext {
         final DragInfo dragDelta = new DragInfo(node);
         node.addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
             if (me.getButton() == button) {
+                dragDelta.dragging = true;
                 dragDelta.defaultCursor = node.getCursor();
                 dragDelta.x = me.getX();
                 dragDelta.y = me.getY();
             }
         });
         node.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
-            if (!dragDelta.enableDrag.get()) return;
+            if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
             if (button == null || me.getButton() == button) {
                 node.setCursor(dragDelta.cursor.get());
                 if (dragDelta.movementX.get()) {
@@ -75,6 +85,7 @@ public interface NodeContext {
             }
         });
         node.addEventHandler(MouseEvent.MOUSE_RELEASED, me -> {
+            dragDelta.dragging = false;
             node.setCursor(dragDelta.defaultCursor);
         });
         return dragDelta;
@@ -82,12 +93,14 @@ public interface NodeContext {
     static DragInfo makeDraggable(javafx.scene.Node node) {
         final DragInfo dragDelta = new DragInfo(node);
         node.addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
+            dragDelta.dragging = true;
             dragDelta.defaultCursor = node.getCursor();
             dragDelta.x = me.getX();
             dragDelta.y = me.getY();
+            me.consume();
         });
         node.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
-            if (!dragDelta.enableDrag.get()) return;
+            if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
             node.setCursor(dragDelta.cursor.get());
             if (dragDelta.movementX.get()) {
                 node.setLayoutX(node.getLayoutX() + (me.getX() - dragDelta.x));
@@ -98,7 +111,39 @@ public interface NodeContext {
             me.consume();
         });
         node.addEventHandler(MouseEvent.MOUSE_RELEASED, me -> {
+            dragDelta.dragging = false;
             node.setCursor(dragDelta.defaultCursor);
+            me.consume();
+        });
+        return dragDelta;
+    }
+    static DragInfo makeDraggable(javafx.scene.Node node, NodeCanvas canvas) {
+        final DragInfo dragDelta = new DragInfo(node);
+        node.addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
+            dragDelta.dragging = true;
+            dragDelta.defaultCursor = node.getCursor();
+            dragDelta.x = me.getX();
+            dragDelta.y = me.getY();
+            me.consume();
+        });
+        node.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
+            if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
+            node.setCursor(dragDelta.cursor.get());
+            boolean snap = canvas.snapToGridProperty().get();
+            if (dragDelta.movementX.get()) {
+                double x = node.getLayoutX() + (me.getX() - dragDelta.x);
+                node.setLayoutX(snap ? floor(x, 20) : x);
+            }
+            if (dragDelta.movementY.get()) {
+                double y = node.getLayoutY() + (me.getY() - dragDelta.y);
+                node.setLayoutY(snap ? floor(y, 20) : y);
+            }
+            me.consume();
+        });
+        node.addEventHandler(MouseEvent.MOUSE_RELEASED, me -> {
+            dragDelta.dragging = false;
+            node.setCursor(dragDelta.defaultCursor);
+            me.consume();
         });
         return dragDelta;
     }

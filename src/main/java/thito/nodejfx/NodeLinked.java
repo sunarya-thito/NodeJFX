@@ -111,7 +111,7 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
         return new LinearGradient(
                 0, 0,
                 1, 0,
-                true, CycleMethod.REPEAT,
+                true, CycleMethod.NO_CYCLE,
                 new Stop(x < x2 ? 0 : 1, outputColor), new Stop(x < x2 ? 1 : 0, inputColor));
     }
 

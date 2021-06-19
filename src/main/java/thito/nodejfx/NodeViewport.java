@@ -323,7 +323,7 @@ public class NodeViewport extends AnchorPane {
         // determine scale
         double oldScale = this.scale.getX();
         double scale = oldScale * factor;
-        scale = Math.max(Math.min(1, scale), 0.1);
+        scale = Math.max(Math.min(2, scale), 0.1);
         double f = (scale / oldScale) - 1;
 
         // determine offset that we will have to move the node

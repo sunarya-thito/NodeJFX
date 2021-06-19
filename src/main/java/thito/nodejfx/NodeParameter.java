@@ -1,7 +1,6 @@
 package thito.nodejfx;
 
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -310,6 +309,7 @@ public class NodeParameter extends AnchorPane {
         if (inputShape != null) {
             getChildren().remove(inputShape.getComponent());
         }
+        if (type == null) return;
         inputShape = type.createNewHandler(this, true);
         inputShape.getComponent().layoutXProperty().set(0);
         inputShape.getComponent().setLayoutY(getHeight()/2d);
@@ -427,8 +427,13 @@ public class NodeParameter extends AnchorPane {
         return node;
     }
 
+    private NodeCanvas canvas;
     public NodeCanvas getCanvas() {
-        return node == null ? null : node.getCanvas();
+        return node == null ? canvas : node.getCanvas();
+    }
+
+    public void setCanvas(NodeCanvas canvas) {
+        this.canvas = canvas;
     }
 
     protected void initialize(Node node) {

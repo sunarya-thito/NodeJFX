@@ -33,6 +33,22 @@ public class NodeLinkContainer extends Pane {
         return null;
     }
 
+    protected NodeParameter findSlotByPosition(double mouseX, double mouseY) {
+        for (javafx.scene.Node node : canvas.getChestContainer().getChildren()) {
+            if (node instanceof Chest) {
+                for (ChestSlot slot : ((Chest) node).getSlots()) {
+                    if (slot.getLayoutBounds().contains(slot.sceneToLocal(mouseX, mouseY))) {
+                        return slot.getDummy();
+                    }
+                }
+                if (((Chest) node).getAreaDummy().contains(((Chest) node).getAreaDummy().sceneToLocal(mouseX, mouseY))) {
+                    return ((Chest) node).getDummy();
+                }
+            }
+        }
+        return null;
+    }
+
     public NodeDragContext getContext() {
         return context;
     }

@@ -22,8 +22,9 @@ public class NodeCanvas extends Pane {
     private ObjectProperty<NodeLinkStyle> style = new SimpleObjectProperty<>(NodeLinkStyle.BEZIER_STYLE);
     private ObservableSet<NodeCanvasElement> selectedNodes = FXCollections.observableSet(ConcurrentHashMap.newKeySet());
     private ObservableList<NodeGroup> groups = FXCollections.observableArrayList();
-    private BooleanProperty snapToGrid = new SimpleBooleanProperty(true);
+    private BooleanProperty snapToGrid = new SimpleBooleanProperty(false);
     private NodeSelectionContainer selectionContainer = new NodeSelectionContainer(this);
+    private ChestContainer chestContainer = new ChestContainer(this);
     private NodeViewport viewport;
 
     public NodeCanvas() {
@@ -69,7 +70,7 @@ public class NodeCanvas extends Pane {
             }
         });
 
-        getChildren().addAll(groupHighlightContainer, linkContainer, nodeContainer, groupContainer, selectionContainer);
+        getChildren().addAll(groupHighlightContainer, chestContainer, linkContainer, nodeContainer, groupContainer, selectionContainer);
         style.addListener((obs, oldValue, newValue) -> {
             for (NodeLink link : linkContainer.getLinks()) {
                 link.setStyle(newValue);
@@ -102,6 +103,10 @@ public class NodeCanvas extends Pane {
                 }
             }
         });
+    }
+
+    public ChestContainer getChestContainer() {
+        return chestContainer;
     }
 
     public NodeSelectionContainer getSelectionContainer() {

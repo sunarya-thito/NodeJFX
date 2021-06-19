@@ -22,7 +22,8 @@ public class NodeDragContext {
     }
 
     public void stopDragging(double x, double y) {
-        NodeParameter param = getContainer().findByPosition(x, y);
+        NodeParameter param = getContainer().findSlotByPosition(x, y);
+        if (param == null) param = getContainer().findByPosition(x, y);
         NodeCanvas canvas = getContainer().getCanvas();
         for (NodeLinking linking : nodeLinking) {
             if (param != null) {
