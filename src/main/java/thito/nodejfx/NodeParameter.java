@@ -141,13 +141,23 @@ public class NodeParameter extends AnchorPane {
 
         getChildren().add(container);
 
+        layoutXProperty().addListener((obs) -> {
+            updateLinks();
+        });
+
+        layoutYProperty().addListener(obs -> {
+            updateLinks();
+        });
+
         heightProperty().addListener((obs, oldValue, newValue) -> {
+            updateLinks();
             inputShape.getComponent().layoutYProperty().set(newValue.doubleValue() / 2d);
             outputShape.getComponent().layoutYProperty().set(newValue.doubleValue() / 2d);
             setTopAnchor(crossButton, (newValue.doubleValue() - crossButton.getPrefHeight()) / 2d);
         });
 
         widthProperty().addListener((obs, old, val) -> {
+            updateLinks();
             outputShape.getComponent().layoutXProperty().set(val.doubleValue());
             if (node != null) {
                 node.layout();
@@ -395,6 +405,13 @@ public class NodeParameter extends AnchorPane {
         outputDrag = new NodeDragListener(this, false, outputShape.getComponent());
     }
 
+    public NodeParameter findByPosition(double x, double y) {
+        if (isInBounds(sceneToLocal(x, y))) {
+            return this;
+        }
+        return null;
+    }
+
     public NodeLinkShape.NodeLinkShapeHandler getInputShape() {
         return inputShape;
     }
@@ -436,11 +453,11 @@ public class NodeParameter extends AnchorPane {
         this.canvas = canvas;
     }
 
-    protected void initialize(Node node) {
+    public void initialize(Node node) {
         this.node = node;
     }
 
-    protected void destroy(Node node) {
+    public void destroy(Node node) {
         if (node != null) {
             for (NodeParameter output : getUnmodifiableOutputLinks()) {
                 node.getCanvas().disconnect(this, output);
@@ -493,38 +510,18 @@ public class NodeParameter extends AnchorPane {
 
     protected void initialize(NodeLink x) {
         links.add(x);
-        if (x instanceof InvalidationListener) {
-            InvalidationListener linked = (InvalidationListener) x;
-            Node node = getNode();
-            node.layoutXProperty().addListener(linked);
-            node.layoutYProperty().addListener(linked);
-            node.widthProperty().addListener(linked);
-            node.heightProperty().addListener(linked);
-            layoutXProperty().addListener(linked);
-            layoutYProperty().addListener(linked);
-            heightProperty().addListener(linked);
-            widthProperty().addListener(linked);
-            getInputType().addListener(linked);
-            getOutputType().addListener(linked);
+    }
+
+    public void updateLinks() {
+        for (NodeLink link : links) {
+            if (link instanceof NodeLinked) {
+                ((NodeLinked) link).invalidated(null);
+            }
         }
     }
 
     protected void destroy(NodeLink x) {
         links.remove(x);
-        if (x instanceof InvalidationListener) {
-            InvalidationListener linked = (InvalidationListener) x;
-            Node node = getNode();
-            node.layoutXProperty().removeListener(linked);
-            node.layoutYProperty().removeListener(linked);
-            node.widthProperty().removeListener(linked);
-            node.heightProperty().removeListener(linked);
-            layoutXProperty().removeListener(linked);
-            layoutYProperty().removeListener(linked);
-            heightProperty().removeListener(linked);
-            widthProperty().removeListener(linked);
-            getInputType().removeListener(linked);
-            getOutputType().removeListener(linked);
-        }
     }
 
     public SimpleBooleanProperty getAllowInput() {

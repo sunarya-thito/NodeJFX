@@ -1,6 +1,8 @@
 package thito.nodejfx.style;
 
+import javafx.scene.*;
 import javafx.scene.Node;
+import javafx.scene.layout.*;
 import javafx.scene.paint.*;
 import javafx.scene.shape.*;
 import thito.nodejfx.*;
@@ -65,7 +67,10 @@ public class BezierLinkStyle implements NodeLinkStyle {
         @Override
         public void destroy(NodeLinkContainer container) {
             activeLinkHelper.stop();
-            container.getChildren().remove(curve);
+            Parent parent = curve.getParent();
+            if (parent instanceof Pane) {
+                ((Pane) parent).getChildren().remove(curve);
+            }
         }
 
         @Override

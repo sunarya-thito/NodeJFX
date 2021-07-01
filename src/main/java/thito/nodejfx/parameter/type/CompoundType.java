@@ -103,8 +103,7 @@ public class CompoundType implements NodeParameterType {
     public boolean isAssignableFrom(NodeParameterType nodeParameterType) {
         if (nodeParameterType instanceof JavaParameterType) {
             for (Class<?> cl : classes) {
-                if (cl.isAssignableFrom(((JavaParameterType<?>) nodeParameterType).getType()) ||
-                ((JavaParameterType<?>) nodeParameterType).getType().isAssignableFrom(cl)) {
+                if (isAssignableFrom(((JavaParameterType<?>) nodeParameterType).getType(), cl) || isAssignableFrom(cl, ((JavaParameterType<?>) nodeParameterType).getType())) {
                     return true;
                 }
             }
@@ -112,12 +111,16 @@ public class CompoundType implements NodeParameterType {
         if (nodeParameterType instanceof CompoundType) {
             for (Class<?> cl : classes) {
                 for (Class<?> cl2 : ((CompoundType) nodeParameterType).classes) {
-                    if (cl.isAssignableFrom(cl2) || cl2.isAssignableFrom(cl)) {
+                    if (isAssignableFrom(cl, cl2) || isAssignableFrom(cl2, cl)) {
                         return true;
                     }
                 }
             }
         }
         return false;
+    }
+
+    public static boolean isAssignableFrom(Class<?> target, Class<?> from) {
+        return target.isAssignableFrom(from) || (from == String.class && (target.isPrimitive() || Number.class.isAssignableFrom(target) || target == Boolean.class || target == Character.class));
     }
 }

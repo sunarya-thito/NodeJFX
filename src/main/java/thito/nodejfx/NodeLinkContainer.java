@@ -23,26 +23,17 @@ public class NodeLinkContainer extends Pane {
     }
 
     protected NodeParameter findByPosition(double mouseX, double mouseY) {
-        for (Node node : canvas.getNodes()) {
-            for (NodeParameter parameter : node.getParameters()) {
-                if (parameter.isInBounds(parameter.sceneToLocal(mouseX, mouseY))) {
-                    return parameter;
-                }
-            }
-        }
-        return null;
-    }
-
-    protected NodeParameter findSlotByPosition(double mouseX, double mouseY) {
-        for (javafx.scene.Node node : canvas.getChestContainer().getChildren()) {
-            if (node instanceof Chest) {
-                for (ChestSlot slot : ((Chest) node).getSlots()) {
-                    if (slot.getLayoutBounds().contains(slot.sceneToLocal(mouseX, mouseY))) {
-                        return slot.getDummy();
+        for (javafx.scene.Node node : canvas.getChildren()) {
+            if (node instanceof NodeContainer) {
+                for (javafx.scene.Node nx : ((NodeContainer) node).getChildren()) {
+                    if (nx instanceof Node) {
+                        for (NodeParameter parameter : ((Node) nx).getParameters()) {
+                            NodeParameter found = parameter.findByPosition(mouseX, mouseY);
+                            if (found != null) {
+                                return found;
+                            }
+                        }
                     }
-                }
-                if (((Chest) node).getAreaDummy().contains(((Chest) node).getAreaDummy().sceneToLocal(mouseX, mouseY))) {
-                    return ((Chest) node).getDummy();
                 }
             }
         }

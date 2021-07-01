@@ -228,6 +228,14 @@ public class NodeViewport extends AnchorPane {
         } else if (velY > bounds.getMaxY() - padding) {
             paneY().set(paneY().get() - (velY - (bounds.getMaxY() - padding)) * 0.1);
         }
+        getCanvas().getSelectionContainer().updateDrag();
+        for (Object requested : animationRequested) {
+            if (requested instanceof NodeContext.DragInfo) {
+                ((NodeContext.DragInfo) requested).updateDragging();
+            } else if (requested instanceof NodeDragListener) {
+                ((NodeDragListener) requested).updateDrag();
+            }
+        }
     }
 
     public ObservableSet<Object> getAnimationRequested() {

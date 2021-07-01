@@ -1,7 +1,9 @@
 package thito.nodejfx.style;
 
+import javafx.scene.*;
 import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import thito.nodejfx.*;
@@ -66,7 +68,10 @@ public class LineLinkStyle implements NodeLinkStyle {
         @Override
         public void destroy(NodeLinkContainer container) {
             activeLinkHelper.stop();
-            container.getChildren().remove(line);
+            Parent parent = line.getParent();
+            if (parent instanceof Pane) {
+                ((Pane) parent).getChildren().remove(line);
+            }
         }
 
         @Override

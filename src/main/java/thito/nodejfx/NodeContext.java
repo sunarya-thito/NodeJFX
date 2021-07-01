@@ -34,6 +34,9 @@ public interface NodeContext {
     int
             HEIGHT_NODE = 50;
     Robot robot = com.sun.glass.ui.Application.GetApplication().createRobot();
+    BooleanProperty MOUSE_DOWN = new SimpleBooleanProperty();
+    FXUtil util = new FXUtil();
+
     static double getMouseX() {
         return robot.getMouseX();
     }
@@ -59,67 +62,54 @@ public interface NodeContext {
     static Color randomBrightColor(double alpha) {
         return randomMinimumColor(100, 100, 100, alpha);
     }
-    static DragInfo makeDraggable(javafx.scene.Node node, Translate affected, MouseButton button) {
-        final DragInfo dragDelta = new DragInfo(node);
-        node.addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
-            if (me.getButton() == button) {
-                dragDelta.dragging = true;
-                dragDelta.defaultCursor = node.getCursor();
-                dragDelta.x = me.getX();
-                dragDelta.y = me.getY();
-            }
-        });
-        node.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
-            if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
-            if (button == null || me.getButton() == button) {
-                node.setCursor(dragDelta.cursor.get());
-                if (dragDelta.movementX.get()) {
-                    affected.setX(affected.getX() + (me.getX() - dragDelta.x));
-                }
-                if (dragDelta.movementY.get()) {
-                    affected.setY(affected.getY() + (me.getY() - dragDelta.y));
-                }
-                dragDelta.x = me.getX();
-                dragDelta.y = me.getY();
-                me.consume();
-            }
-        });
-        node.addEventHandler(MouseEvent.MOUSE_RELEASED, me -> {
-            dragDelta.dragging = false;
-            node.setCursor(dragDelta.defaultCursor);
-        });
-        return dragDelta;
-    }
     static DragInfo makeDraggable(javafx.scene.Node node) {
         final DragInfo dragDelta = new DragInfo(node);
-        node.addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
-            dragDelta.dragging = true;
-            dragDelta.defaultCursor = node.getCursor();
-            dragDelta.x = me.getX();
-            dragDelta.y = me.getY();
-            me.consume();
-        });
-        node.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
+        dragDelta.updateDragging = () -> {
+            if (!MOUSE_DOWN.get()) {
+                NodeCanvas canvas = dragDelta.canvas;
+                if (canvas != null) {
+                    NodeViewport viewport = canvas.getViewport();
+                    if (viewport != null) {
+                        viewport.getAnimationRequested().remove(dragDelta);
+                    }
+                }
+                return;
+            }
+            double mouseX = getMouseX();
+            double mouseY = getMouseY();
             if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
             node.setCursor(dragDelta.cursor.get());
+            NodeCanvas canvas = dragDelta.canvas;
+            boolean snap = canvas == null ? false : canvas.snapToGridProperty().get();
+            if (canvas != null) {
+                NodeViewport viewport = canvas.getViewport();
+                if (viewport != null) {
+                    Point2D point = viewport.screenToLocal(mouseX, mouseY);
+                    viewport.xOverflowProperty().set(point.getX());
+                    viewport.yOverflowProperty().set(point.getY());
+                }
+            }
+            Point2D point = node.screenToLocal(mouseX, mouseY);
             if (dragDelta.movementX.get()) {
-                node.setLayoutX(node.getLayoutX() + (me.getX() - dragDelta.x));
+                double x = node.getLayoutX() + (point.getX() - dragDelta.x);
+                node.setLayoutX(snap ? floor(x, 20) : x);
             }
             if (dragDelta.movementY.get()) {
-                node.setLayoutY(node.getLayoutY() + (me.getY() - dragDelta.y));
+                double y = node.getLayoutY() + (point.getY() - dragDelta.y);
+                node.setLayoutY(snap ? floor(y, 20) : y);
             }
-            me.consume();
-        });
-        node.addEventHandler(MouseEvent.MOUSE_RELEASED, me -> {
-            dragDelta.dragging = false;
-            node.setCursor(dragDelta.defaultCursor);
-            me.consume();
-        });
-        return dragDelta;
-    }
-    static DragInfo makeDraggable(javafx.scene.Node node, NodeCanvas canvas) {
-        final DragInfo dragDelta = new DragInfo(node);
+        };
         node.addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
+            NodeCanvas canvas = dragDelta.canvas;
+            if (canvas != null) {
+                NodeViewport viewport = canvas.getViewport();
+                if (viewport != null) {
+                    Point2D point = viewport.sceneToLocal(me.getSceneX(), me.getSceneY());
+                    viewport.xOverflowProperty().set(point.getX());
+                    viewport.yOverflowProperty().set(point.getY());
+                    viewport.getAnimationRequested().add(dragDelta);
+                }
+            }
             dragDelta.dragging = true;
             dragDelta.defaultCursor = node.getCursor();
             dragDelta.x = me.getX();
@@ -129,7 +119,16 @@ public interface NodeContext {
         node.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
             if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
             node.setCursor(dragDelta.cursor.get());
-            boolean snap = canvas.snapToGridProperty().get();
+            NodeCanvas canvas = dragDelta.canvas;
+            boolean snap = canvas == null ? false : canvas.snapToGridProperty().get();
+            if (canvas != null) {
+                NodeViewport viewport = canvas.getViewport();
+                if (viewport != null) {
+                    Point2D point = viewport.sceneToLocal(me.getSceneX(), me.getSceneY());
+                    viewport.xOverflowProperty().set(point.getX());
+                    viewport.yOverflowProperty().set(point.getY());
+                }
+            }
             if (dragDelta.movementX.get()) {
                 double x = node.getLayoutX() + (me.getX() - dragDelta.x);
                 node.setLayoutX(snap ? floor(x, 20) : x);
@@ -141,6 +140,13 @@ public interface NodeContext {
             me.consume();
         });
         node.addEventHandler(MouseEvent.MOUSE_RELEASED, me -> {
+            NodeCanvas canvas = dragDelta.canvas;
+            if (canvas != null) {
+                NodeViewport viewport = canvas.getViewport();
+                if (viewport != null) {
+                    viewport.getAnimationRequested().remove(dragDelta);
+                }
+            }
             dragDelta.dragging = false;
             node.setCursor(dragDelta.defaultCursor);
             me.consume();
@@ -152,6 +158,44 @@ public interface NodeContext {
     }
     static DragInfo makeDraggable(javafx.scene.Node node, NodeCanvasElement element) {
         final DragInfo dragDelta = new DragInfo(node);
+        dragDelta.updateDragging = () -> {
+            NodeCanvas canvas = element.getCanvas();
+            if (!MOUSE_DOWN.get()) {
+                if (canvas != null) {
+                    NodeViewport viewport = canvas.getViewport();
+                    if (viewport != null) {
+                        viewport.getAnimationRequested().remove(dragDelta);
+                    }
+                }
+                return;
+            }
+            double mouseX = getMouseX();
+            double mouseY = getMouseY();
+            if (!dragDelta.enableDrag.get() || !dragDelta.dragging) return;
+            node.setCursor(dragDelta.cursor.get());
+            if (canvas != null) {
+                NodeViewport viewport = canvas.getViewport();
+                if (viewport != null) {
+                    Point2D point = viewport.screenToLocal(mouseX, mouseY);
+                    viewport.xOverflowProperty().set(point.getX());
+                    viewport.yOverflowProperty().set(point.getY());
+                }
+                boolean snap = canvas.snapToGridProperty().get();
+                for (NodeCanvasElement selected : new ArrayList<>(canvas.getSelectedNodes())) {
+                    if (selected.getParent() == null) continue;
+                    DragInfo dragInfo = selected.getDragInfo();
+                    if (dragInfo == null) continue;
+                    Point2D scene = canvas.getScene().getRoot().screenToLocal(mouseX, mouseY);
+                    Point2D local = selected.getParent().sceneToLocal(scene.getX() - dragInfo.x, scene.getY() - dragInfo.y);
+                    if (dragInfo.movementX.get()) {
+                        selected.setLayoutX(snap ? floor(local.getX(), 20) : local.getX());
+                    }
+                    if (dragInfo.movementY.get()) {
+                        selected.setLayoutY(snap ? floor(local.getY(), 20) : local.getY());
+                    }
+                }
+            }
+        };
         node.addEventHandler(MouseEvent.MOUSE_ENTERED, me -> {
             dragDelta.defaultCursor = node.getCursor();
             node.setCursor(dragDelta.cursor.get());
@@ -165,7 +209,10 @@ public interface NodeContext {
             if (canvas != null) {
                 NodeViewport viewport = canvas.getViewport();
                 if (viewport != null) {
-                    viewport.getAnimationRequested().add(element);
+                    Point2D point = viewport.sceneToLocal(me.getSceneX(), me.getSceneY());
+                    viewport.xOverflowProperty().set(point.getX());
+                    viewport.yOverflowProperty().set(point.getY());
+                    viewport.getAnimationRequested().add(dragDelta);
                 }
                 for (NodeCanvasElement selected : new ArrayList<>(canvas.getSelectedNodes())) {
                     DragInfo info = selected.getDragInfo();
@@ -211,7 +258,7 @@ public interface NodeContext {
             if (canvas != null) {
                 NodeViewport viewport = canvas.getViewport();
                 if (viewport != null) {
-                    viewport.getAnimationRequested().remove(element);
+                    viewport.getAnimationRequested().remove(dragDelta);
                 }
                 for (NodeCanvasElement selected : new ArrayList<>(canvas.getSelectedNodes())) {
                     if (selected.getParent() == null) continue;
@@ -268,6 +315,7 @@ public interface NodeContext {
     }
 
     class DragInfo {
+        private NodeCanvas canvas;
         private BooleanProperty enableDrag = new SimpleBooleanProperty(true);
         private Cursor defaultCursor;
         private ObjectProperty<Cursor> cursor = new SimpleObjectProperty<>(Cursor.MOVE);
@@ -277,6 +325,19 @@ public interface NodeContext {
         private double y;
         private javafx.scene.Node node;
         private boolean dragging;
+        private Runnable updateDragging;
+
+        public void updateDragging() {
+            if (updateDragging != null) updateDragging.run();
+        }
+
+        public NodeCanvas getCanvas() {
+            return canvas;
+        }
+
+        public void setCanvas(NodeCanvas canvas) {
+            this.canvas = canvas;
+        }
 
         public ObjectProperty<Cursor> getCursor() {
             return cursor;

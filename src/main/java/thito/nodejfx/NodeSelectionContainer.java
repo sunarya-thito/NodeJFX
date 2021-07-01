@@ -106,7 +106,20 @@ public class NodeSelectionContainer extends Pane {
         getChildren().add(selection);
     }
 
+    public void updateDrag() {
+        if (!isDragging()) return;
+        Point2D point = screenToLocal(NodeContext.getMouseX(), NodeContext.getMouseY());
+        endX.set(point.getX());
+        endY.set(point.getY());
+        if (grouping == null) {
+            refreshSelection(intersecting);
+        }
+        refresh();
+    }
+
+    private boolean intersecting;
     public void moveDrag(double x, double y, boolean intersecting) {
+        this.intersecting = intersecting;
         if (!isDragging()) return;
         Point2D point = sceneToLocal(x, y);
         x = point.getX();

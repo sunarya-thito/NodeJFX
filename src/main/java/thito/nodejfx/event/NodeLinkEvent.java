@@ -1,5 +1,6 @@
 package thito.nodejfx.event;
 
+import javafx.beans.property.*;
 import javafx.event.Event;
 import javafx.event.EventType;
 import thito.nodejfx.*;
@@ -12,6 +13,7 @@ public class NodeLinkEvent extends Event {
     NODE_LINK_CANCEL_EVENT = new EventType<>("NODE_LINK_CANCEL_EVENT")
     ;
 
+    private BooleanProperty consumed = new SimpleBooleanProperty();
     private NodeParameter nodeSource, nodeTarget;
     private NodeLinking linking;
     private NodeLinked linked;
@@ -21,6 +23,16 @@ public class NodeLinkEvent extends Event {
         this.linking = linking;
         this.nodeSource = source;
         this.nodeTarget = target;
+    }
+
+    @Override
+    public void consume() {
+        consumed.set(true);
+    }
+
+    @Override
+    public boolean isConsumed() {
+        return consumed.get();
     }
 
     public NodeLinked getLinked() {

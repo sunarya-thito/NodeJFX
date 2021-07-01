@@ -1,21 +1,21 @@
 package thito.nodejfx;
 
+import javafx.beans.binding.*;
 import javafx.beans.property.*;
 import javafx.collections.*;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.*;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
-import thito.nodejfx.event.NodeLinkEvent;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
+import thito.nodejfx.event.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class NodeCanvas extends Pane {
 
     private NodeLinkContainer linkContainer;
-    private NodeContainer nodeContainer = new NodeContainer();
+    private NodeContainer nodeContainer = new NodeContainer(this);
     private NodeGroupContainer groupContainer = new NodeGroupContainer();
     private NodeGroupHighlightContainer groupHighlightContainer = new NodeGroupHighlightContainer();
     private ObservableList<Node> nodes = FXCollections.observableArrayList();
@@ -24,8 +24,8 @@ public class NodeCanvas extends Pane {
     private ObservableList<NodeGroup> groups = FXCollections.observableArrayList();
     private BooleanProperty snapToGrid = new SimpleBooleanProperty(false);
     private NodeSelectionContainer selectionContainer = new NodeSelectionContainer(this);
-    private ChestContainer chestContainer = new ChestContainer(this);
     private NodeViewport viewport;
+    private NodeGroup draggingGroup;
 
     public NodeCanvas() {
         setManaged(false);
@@ -53,24 +53,8 @@ public class NodeCanvas extends Pane {
                 });
             }
         });
-        nodes.addListener((ListChangeListener<Node>) c -> {
-            while (c.next()) {
-                for (Node node : new ArrayList<>(c.getAddedSubList())) {
-                    node.initialize(this);
-                    prepare(node);
-                    nodeContainer.getChildren().add(node);
-                    node.updateGroups();
-                }
-                NodeContext.iterateLater(c.getRemoved(), node -> {
-                    destroy(node);
-                    selectedNodes.remove(node);
-                    node.getGroups().clear();
-                    nodeContainer.getChildren().remove(node);
-                });
-            }
-        });
-
-        getChildren().addAll(groupHighlightContainer, chestContainer, linkContainer, nodeContainer, groupContainer, selectionContainer);
+        Bindings.bindContent(nodeContainer.getNodes(), nodes);
+        getChildren().addAll(groupHighlightContainer, linkContainer, nodeContainer, groupContainer, selectionContainer);
         style.addListener((obs, oldValue, newValue) -> {
             for (NodeLink link : linkContainer.getLinks()) {
                 link.setStyle(newValue);
@@ -105,8 +89,12 @@ public class NodeCanvas extends Pane {
         });
     }
 
-    public ChestContainer getChestContainer() {
-        return chestContainer;
+    public NodeGroup getDraggingGroup() {
+        return draggingGroup;
+    }
+
+    public void setDraggingGroup(NodeGroup draggingGroup) {
+        this.draggingGroup = draggingGroup;
     }
 
     public NodeSelectionContainer getSelectionContainer() {
@@ -183,8 +171,10 @@ public class NodeCanvas extends Pane {
     public NodeLinked connect(NodeParameter source, NodeParameter target) {
         if (!checkAssignable(source, target)) return null;
         NodeLinked linked = link(source, target, false);
-        source.outputLinks().add(target);
-        target.inputLinks().add(source);
+        if (linked != null) {
+            source.outputLinks().add(target);
+            target.inputLinks().add(source);
+        }
         return linked;
     }
 
@@ -268,11 +258,20 @@ public class NodeCanvas extends Pane {
         if (!force) {
             NodeLinkEvent event = new NodeLinkEvent(NodeLinkEvent.NODE_LINKED_EVENT, null, linked, source, target);
             source.fireEvent(event);
-            if (event.isConsumed()) return null;
+            if (event.isConsumed()) {
+                linked.destroy(linkContainer);
+                return null;
+            }
             target.fireEvent(event);
-            if (event.isConsumed()) return null;
+            if (event.isConsumed()) {
+                linked.destroy(linkContainer);
+                return null;
+            }
             fireEvent(event);
-            if (event.isConsumed()) return null;
+            if (event.isConsumed()) {
+                linked.destroy(linkContainer);
+                return null;
+            }
         }
         linkContainer.addLink(linked);
         return linked;

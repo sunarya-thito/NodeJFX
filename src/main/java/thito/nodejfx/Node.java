@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.*;
 
-public class Node extends VBox implements NodeCanvasElement {
+public class Node extends BorderPane implements NodeCanvasElement {
 
     private SimpleStringProperty titleText = new SimpleStringProperty();
     private SimpleStringProperty subtitleText = new SimpleStringProperty();
@@ -35,8 +35,10 @@ public class Node extends VBox implements NodeCanvasElement {
     private BooleanProperty reachableOutput = new SimpleBooleanProperty();
     private BooleanProperty highlight = new SimpleBooleanProperty();
     private ObjectProperty<Color> shadowProperty = new SimpleObjectProperty<>(NodeContext.SHADOW_NODE);
+    private boolean preventDelete;
 
     private ObjectProperty<Point2D> dropPoint = new SimpleObjectProperty<>(new Point2D(getLayoutX(), getLayoutY()));
+    private VBox wrapped;
 
     public Node() {
         setPickOnBounds(false);
@@ -47,14 +49,20 @@ public class Node extends VBox implements NodeCanvasElement {
                 , new CornerRadii(5), null)));
 
         setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(5), new BorderWidths(1))));
-        getChildren().add(title);
+//        getChildren().add(title);
+        setTop(title);
+
+        wrapped = new VBox();
+
+        setCenter(wrapped);
+//        getChildren().add(wrapped);
 
         getParameters().addListener((ListChangeListener<? super NodeParameter>) change -> {
-            final List<javafx.scene.Node> list = getChildren();
+            final List<javafx.scene.Node> list = wrapped.getChildren();
             synchronized (list) {
                 while (change.next()) {
                     if (change.wasPermutated()) {
-                        List<javafx.scene.Node> cleared = list.subList(1 + change.getFrom(), 1 + change.getTo());
+                        List<javafx.scene.Node> cleared = list.subList(change.getFrom(), change.getTo());
                         for (javafx.scene.Node node : cleared) {
                             if (node instanceof NodeParameter) {
                                 ((NodeParameter) node).destroy(this);
@@ -65,10 +73,10 @@ public class Node extends VBox implements NodeCanvasElement {
                         for (NodeParameter par : param) {
                             par.initialize(this);
                         }
-                        list.addAll(1 + change.getFrom(), param);
+                        list.addAll(change.getFrom(), param);
                     } else {
                         if (change.wasRemoved()) {
-                            List<javafx.scene.Node> removed = list.subList(1 + change.getFrom(), 1 + change.getFrom() + change.getRemovedSize());
+                            List<javafx.scene.Node> removed = list.subList(change.getFrom(), change.getFrom() + change.getRemovedSize());
                             for (javafx.scene.Node node : removed) {
                                 if (node instanceof NodeParameter) {
                                     ((NodeParameter) node).destroy(this);
@@ -81,7 +89,7 @@ public class Node extends VBox implements NodeCanvasElement {
                             for (NodeParameter parameter : parameters) {
                                 parameter.initialize(this);
                             }
-                            list.addAll(1 + change.getFrom(), parameters);
+                            list.addAll(change.getFrom(), parameters);
                         }
                     }
                 }
@@ -110,7 +118,9 @@ public class Node extends VBox implements NodeCanvasElement {
 
         addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (dragToFront()) {
+                preventDelete = true;
                 toFront();
+                preventDelete = false;
             }
             if (!isSelected()) {
                 NodeCanvas canvas = getCanvas();
@@ -204,7 +214,20 @@ public class Node extends VBox implements NodeCanvasElement {
         layoutYProperty().addListener(this::updateGroups);
         widthProperty().addListener(this::updateGroups);
         heightProperty().addListener(this::updateGroups);
+    }
 
+    private void updateLinks() {
+        for (NodeParameter parameter : getParameters()) {
+            parameter.updateLinks();
+        }
+    }
+
+    public boolean isPreventDelete() {
+        return preventDelete;
+    }
+
+    public VBox getParameterContainer() {
+        return wrapped;
     }
 
     public ObjectProperty<Color> shadowProperty() {
@@ -273,6 +296,7 @@ public class Node extends VBox implements NodeCanvasElement {
     }
 
     void updateGroups(Observable obs) {
+        updateLinks();
         for (NodeGroup group : new ArrayList<>(getGroups())) {
             if (!group.isOnBounds(this)) {
                 getGroups().remove(group);
@@ -341,7 +365,7 @@ public class Node extends VBox implements NodeCanvasElement {
         // TODO Avoid collision?
     }
 
-    protected void initialize(NodeCanvas canvas) {
+    public void initialize(NodeCanvas canvas) {
         this.canvas = canvas;
         if (isSelected()) {
             canvas.getSelectedNodes().add(this);

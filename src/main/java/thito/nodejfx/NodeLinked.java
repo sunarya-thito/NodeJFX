@@ -1,6 +1,7 @@
 package thito.nodejfx;
 
 import javafx.animation.*;
+import javafx.application.*;
 import javafx.beans.*;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -46,7 +47,9 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
         setHover(hardHover);
     }
     public void setHover(boolean hover) {
-        getStyle().setSelected(selected || hardHover || hover);
+        if (getStyle() != null) {
+            getStyle().setSelected(selected || hardHover || hover);
+        }
     }
 
     public LinkingElement getLinkingElement() {
@@ -56,17 +59,18 @@ public class NodeLinked extends NodeLink implements InvalidationListener {
     @Override
     public void invalidated(Observable observable) {
         if (container == null) return;
-        Point2D outLoc = container.sceneToLocal(source.getOutputLocation());
-        getStartX().set(outLoc.getX());
-        getStartY().set(outLoc.getY());
-        Point2D inLoc = container.sceneToLocal(target.getInputLocation());
-        getEndX().set(inLoc.getX());
-        getEndY().set(inLoc.getY());
+        Platform.runLater(() -> {
+            Point2D outLoc = container.sceneToLocal(source.getOutputLocation());
+            getStartX().set(outLoc.getX());
+            getStartY().set(outLoc.getY());
+            Point2D inLoc = container.sceneToLocal(target.getInputLocation());
+            getEndX().set(inLoc.getX());
+            getEndY().set(inLoc.getY());
+        });
     }
 
     @Override
     public void setStyle(NodeLinkStyle style) {
-        NodeLinkStyle.NodeLinkStyleHandler old = getStyle();
         super.setStyle(style);
     }
 

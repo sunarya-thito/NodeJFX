@@ -67,6 +67,27 @@ public class NodeDragListener {
 
     }
 
+    public void updateDrag() {
+        NodeDragContext context = getContext();
+        if (context != null) {
+            double x = NodeContext.getMouseX();
+            double y = NodeContext.getMouseY();
+            NodeViewport viewport = context.getContainer().getCanvas().getViewport();
+            if (viewport != null) {
+                Point2D point = viewport.screenToLocal(x, y);
+                viewport.xOverflowProperty().set(point.getX());
+                viewport.yOverflowProperty().set(point.getY());
+            }
+            for (NodeLinking linking : context.getNodeLinking()) {
+                Point2D point = context.getContainer().screenToLocal(x, y);
+                x = point.getX();
+                y = point.getY();
+                linking.getEndX().set(x);
+                linking.getEndY().set(y);
+            }
+        }
+    }
+
     public NodeDragContext getContext() {
         NodeCanvas canvas = parameter.getCanvas();
         return canvas == null ? null : canvas.getDragContext();

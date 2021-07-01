@@ -22,8 +22,7 @@ public class NodeDragContext {
     }
 
     public void stopDragging(double x, double y) {
-        NodeParameter param = getContainer().findSlotByPosition(x, y);
-        if (param == null) param = getContainer().findByPosition(x, y);
+        NodeParameter param = getContainer().findByPosition(x, y);
         NodeCanvas canvas = getContainer().getCanvas();
         for (NodeLinking linking : nodeLinking) {
             if (param != null) {
@@ -40,10 +39,11 @@ public class NodeDragContext {
                         container.getCanvas().fireEvent(new NodeLinkEvent(NodeLinkEvent.NODE_LINK_CANCEL_EVENT ,linking, null, linking.getParameter(), null));
                     }
                 }
+                if (linking.isHold()) {
+                    continue;
+                }
             }
-            if (!linking.isHold()) {
-                container.removeLink(linking);
-            }
+            container.removeLink(linking);
         }
         nodeLinking.clear();
     }

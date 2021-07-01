@@ -402,10 +402,26 @@ public class NodeGroup extends Group implements NodeCanvasElement {
 
     protected void initialize(NodeCanvas canvas) {
         this.canvas = canvas;
+        top.info.setCanvas(canvas);
+        topLeft.info.setCanvas(canvas);
+        topRight.info.setCanvas(canvas);
+        right.info.setCanvas(canvas);
+        left.info.setCanvas(canvas);
+        bottom.info.setCanvas(canvas);
+        bottomLeft.info.setCanvas(canvas);
+        bottomRight.info.setCanvas(canvas);
     }
 
     protected void destroy(NodeCanvas canvas) {
         this.canvas = null;
+        top.info.setCanvas(null);
+        topLeft.info.setCanvas(null);
+        topRight.info.setCanvas(null);
+        right.info.setCanvas(null);
+        left.info.setCanvas(null);
+        bottom.info.setCanvas(null);
+        bottomLeft.info.setCanvas(null);
+        bottomRight.info.setCanvas(null);
     }
 
     private StringProperty groupName;
@@ -414,6 +430,15 @@ public class NodeGroup extends Group implements NodeCanvasElement {
         return groupName;
     }
 
+    private NodeGroupCorner dragging;
+
+    public void updateDrag() {
+        if (dragging != null) {
+            Point2D point = screenToLocal(NodeContext.getMouseX(), NodeContext.getMouseY());
+            dragging.setLayoutX(point.getX());
+            dragging.setLayoutY(point.getY());
+        }
+    }
     public class NodeGroupCorner extends Pane {
 
         private NodeContext.DragInfo info;
@@ -439,11 +464,19 @@ public class NodeGroup extends Group implements NodeCanvasElement {
             addEventFilter(MouseEvent.MOUSE_PRESSED, NodeGroup.this::attemptPress);
             addEventHandler(MouseEvent.MOUSE_PRESSED, Event::consume);
             addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
+                getCanvas().setDraggingGroup(NodeGroup.this);
+                dragging = this;
                 if (resizeBounds.get() == null) {
                     resizeBounds.set(new BoundingBox(getLeftPos().get(), getTopPos().get(), getRightPos().get() - getLeftPos().get(), getBottomPos().get() - getTopPos().get()));
                 }
             });
             addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
+                if (getCanvas().getDraggingGroup() == NodeGroup.this) {
+                    getCanvas().setDraggingGroup(null);
+                }
+                if (dragging == this) {
+                    dragging = null;
+                }
                 resizeBounds.set(new BoundingBox(getLeftPos().get(), getTopPos().get(), getRightPos().get() - getLeftPos().get(), getBottomPos().get() - getTopPos().get()));
             });
         }

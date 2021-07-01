@@ -56,7 +56,7 @@ public class SpecificParameter extends NodeParameter implements UserInputParamet
     }
 
     @Override
-    protected void initialize(Node node) {
+    public void initialize(Node node) {
         super.initialize(node);
     }
 

@@ -70,7 +70,9 @@ public class NodeLink {
     }
 
     protected void updateStyle() {
-        style.getComponent().setEffect(new DropShadow(3, NodeContext.SHADOW_NODE));
+        if (style != null) {
+            style.getComponent().setEffect(new DropShadow(3, NodeContext.SHADOW_NODE));
+        }
     }
 
     public void destroy(NodeLinkContainer container) {
